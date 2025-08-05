@@ -2,7 +2,9 @@ import bcrypt from "bcryptjs";
 import validator from "validator"; 
 import {v2 as cloudinary} from "cloudinary"
 import { json } from "express";
-import doctorModel from "../models/doctorModel";
+import doctorModel from "../models/doctorModel"; 
+import jwt from "jsonwebtoken";
+
 
 //API for ADMIN CONTROLS
 
@@ -97,6 +99,48 @@ const addDoctor = async (res, req) => {
     console.error("Error adding doctor:", error);
     return res.status(500).json({ error: "Server error" });
   }
+}; 
+
+const loginAdmin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Validate inputs
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email and password are required." });
+    }
+
+    if (!validator.isEmail(email)) {
+      return res.status(400).json({ error: "Invalid email format." });
+    }
+
+    // Check against .env credentials
+    const adminEmail = process.env.ADMIN_EMAIL;
+    const adminPassword = process.env.ADMIN_PASSWORD;
+
+    if (email !== adminEmail || password !== adminPassword) {
+      return res.status(401).json({ error: "Invalid credentials." });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { email, role: "admin" },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    return res.status(200).json({
+      message: "Admin login successful",
+      token,
+      admin: {
+        email,
+        role: "admin",
+      },
+    });
+  } catch (error) {
+    console.error("Admin login error:", error);
+    return res.status(500).json({ error: "Server error" });
+  }
 };
 
-export { addDoctor };
+export { addDoctor , loginAdmin };
