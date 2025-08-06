@@ -1,14 +1,10 @@
 import bcrypt from "bcryptjs";
-import validator from "validator"; 
-import {v2 as cloudinary} from "cloudinary"
-import { json } from "express";
-import doctorModel from "../models/doctorModel"; 
+import validator from "validator";
+import { v2 as cloudinary } from "cloudinary";
+import doctorModel from "../models/doctorModel.js";
 import jwt from "jsonwebtoken";
 
-
-//API for ADMIN CONTROLS
-
-const addDoctor = async (res, req) => {
+const addDoctor = async (req, res) => {
   try {
     const {
       name,
@@ -53,19 +49,19 @@ const addDoctor = async (res, req) => {
     }
 
     // Check if doctor already exists
-    const existingDoctor = await Doctor.findOne({ email });
+    const existingDoctor = await doctorModel.findOne({ email });
     if (existingDoctor) {
       return res
         .status(409)
         .json({ error: "Doctor with this email already exists." });
     }
-    
-   // Upload image to Cloudinary
-    let uploadedImageUrl = '';
+
+    // Upload image to Cloudinary
+    let uploadedImageUrl = "";
     if (imageFile) {
       const result = await cloudinary.uploader.upload(imageFile.path, {
-        folder: "doctor_profiles", // Optional: cloud folder name
-         resource_type: "image", 
+        folder: "doctor_profiles",
+        resource_type: "image",
       });
       uploadedImageUrl = result.secure_url;
     }
@@ -83,14 +79,14 @@ const addDoctor = async (res, req) => {
       experience,
       about,
       fees,
-      address :JSON.parse(address),
+      address: JSON.parse(address),
       profileImage: uploadedImageUrl,
-      date:date.now(),
+      date: Date.now(),
     };
 
     // Save to DB
-     const newDoctor = new doctorModel(doctorData)
-     await newDoctor.save() 
+    const newDoctor = new doctorModel(doctorData);
+    await newDoctor.save();
 
     return res
       .status(201)
@@ -99,7 +95,7 @@ const addDoctor = async (res, req) => {
     console.error("Error adding doctor:", error);
     return res.status(500).json({ error: "Server error" });
   }
-}; 
+};
 
 const loginAdmin = async (req, res) => {
   try {
@@ -131,6 +127,7 @@ const loginAdmin = async (req, res) => {
 
     return res.status(200).json({
       message: "Admin login successful",
+      success: true,
       token,
       admin: {
         email,
@@ -143,4 +140,4 @@ const loginAdmin = async (req, res) => {
   }
 };
 
-export { addDoctor , loginAdmin };
+export { addDoctor, loginAdmin };
