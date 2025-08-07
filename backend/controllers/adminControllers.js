@@ -80,7 +80,7 @@ const addDoctor = async (req, res) => {
       about,
       fees,
       address: JSON.parse(address),
-      profileImage: uploadedImageUrl,
+      image: uploadedImageUrl,
       date: Date.now(),
     };
 
@@ -120,19 +120,18 @@ const loginAdmin = async (req, res) => {
 
     // Generate JWT token
     const token = jwt.sign(
-      { email, role: "admin" },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
+  {
+    email,
+    role: "admin",  // isse role check kar paayenge
+  },
+  process.env.JWT_SECRET,
+  { expiresIn: "1d" }
+);
 
     return res.status(200).json({
       message: "Admin login successful",
       success: true,
       token,
-      admin: {
-        email,
-        role: "admin",
-      },
     });
   } catch (error) {
     console.error("Admin login error:", error);
