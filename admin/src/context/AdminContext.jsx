@@ -19,7 +19,9 @@ const AdminContextProvider = (props) => {
       const { data } = await axios.post(
         backendUrl + "/api/admin/all-doctors",
         {},
-        { headers: { aToken } }
+        { headers: {
+      Authorization: `Bearer ${aToken}`,
+    }, }
       );
       if (data.success) {
         setDoctors(data.doctors);
@@ -37,7 +39,9 @@ const AdminContextProvider = (props) => {
       const { data } = await axios.post(
         backendUrl + "/api/admin/change-availability",
         { docId },
-        { headers: { aToken } }
+        { headers: {
+      Authorization: `Bearer ${aToken}`,
+    }, }
       );
       if (data.success) {
         toast.success(data.message);
