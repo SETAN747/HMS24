@@ -55,11 +55,12 @@ const AdminContextProvider = (props) => {
   };
 
   const getAllAppointments = async () => {
-    try {
+    try { 
+      
       const { data } = await axios.get(backendUrl + "/api/admin/appointments", {
-        headers: { aToken },
+        headers: { Authorization: `Bearer ${aToken}` },
       });
-
+       
       if (data.success) {
         setAppointments(data.appointments);
         console.log(data.appointments);
@@ -76,7 +77,7 @@ const AdminContextProvider = (props) => {
       const { data } = await axios.post(
         backendUrl + "/api/admin/cancel-appointment",
         { appointmentId },
-        { headers: { aToken } }
+        { headers:  { Authorization: `Bearer ${aToken}` } }
       );
       if (data.success) {
         toast.success(data.message);
@@ -92,7 +93,7 @@ const AdminContextProvider = (props) => {
   const getDashData = async () => {
     try {
       const { data } = await axios.get(backendUrl + "/api/admin/dashboard", {
-        headers: { aToken },
+        headers:  { Authorization: `Bearer ${aToken}` },
       });
 
       if (data.success) {
