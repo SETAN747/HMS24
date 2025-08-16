@@ -16,7 +16,7 @@ const Navbar = () => {
    const logout = () => {
     setToken(false);
     localStorage.removeItem("token"); 
-    navigate("/");
+    navigate("/login");
   };
 
   return (
@@ -42,6 +42,10 @@ const Navbar = () => {
         </NavLink>
         <NavLink to={"/contact"}>
           <li className="py-1">CONTACT</li>
+          <hr className="border-none outline-none h-0.5  bg-customPrimary  w-3/5 m-auto hidden" />
+        </NavLink> 
+         <NavLink to={"/prescripto-ai"}>
+          <li className="py-1">Prescripto AI</li>
           <hr className="border-none outline-none h-0.5  bg-customPrimary  w-3/5 m-auto hidden" />
         </NavLink>
       </ul>
@@ -114,6 +118,9 @@ const Navbar = () => {
             </NavLink>
             <NavLink  onClick={() => setShowMenu(false)} to="/contact">
              <p className='px-4 py-2 rounded inline-block'> Contact</p>
+            </NavLink> 
+              <NavLink  onClick={() => setShowMenu(false)} to="/prescripto-ai">
+             <p className='px-4 py-2 rounded inline-block'>Prescripto AI</p>
             </NavLink>
           </ul>
         </div>

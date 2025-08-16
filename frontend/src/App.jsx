@@ -1,6 +1,8 @@
-import React from "react";
-import "./App.css";
-import { Routes, Route } from "react-router-dom";
+import React, { useContext } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 import Home from "./pages/Home";
 import Doctors from "./pages/Doctors";
 import Login from "./pages/Login";
@@ -9,10 +11,20 @@ import MyProfile from "./pages/MyProfile";
 import Contact from "./pages/Contact";
 import MyAppointments from "./pages/MyAppointments";
 import Appointment from "./pages/Appointment";
+import PrescriptoAIChat from "./pages/Chatbot";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { AppContext } from "./context/AppContext";
+
+// ProtectedRoute component
+const ProtectedRoute = ({ children }) => {
+  const { token } = useContext(AppContext);
+
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+};
 
 const App = () => {
   return (
@@ -22,15 +34,57 @@ const App = () => {
         <Navbar />
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/doctors" element={<Doctors />} />
-          <Route path="/doctors/:speciality" element={<Doctors />} />
+          <Route
+            path="/doctors"
+            element={
+              <ProtectedRoute>
+                <Doctors />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/doctors/:speciality"
+            element={
+              <ProtectedRoute>
+                <Doctors />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/login" element={<Login />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
-          <Route path="/my-profile" element={<MyProfile />} />
-          <Route path="/my-appointments" element={<MyAppointments />} />
-          <Route path="/appointment/:docId" element={<Appointment />} />{" "}
-          {/* appointments mei se bas s htaaya tha aur chal gya*/}
+          <Route
+            path="/my-profile"
+            element={
+              <ProtectedRoute>
+                <MyProfile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-appointments"
+            element={
+              <ProtectedRoute>
+                <MyAppointments />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/appointment/:docId"
+            element={
+              <ProtectedRoute>
+                <Appointment />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/prescripto-ai"
+            element={
+              <ProtectedRoute>
+                <PrescriptoAIChat />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
         <Footer />
       </div>

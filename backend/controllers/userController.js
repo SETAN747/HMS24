@@ -6,6 +6,7 @@ import { v2 as cloudinary } from "cloudinary";
 import doctorModel from "../models/doctorModel.js"; 
 import appointmentModel from "../models/appointmentModel.js"; 
 import razorpayInstance from "../config/razorpay.js";
+import genAI from "../config/gemini.js";
 
 
 // API to register user
@@ -281,6 +282,114 @@ const verifyRazorpay = async (req, res) => {
     console.log("error:", error);
     res.json({ success: false, message: error.message });
   }
+}; 
+
+ 
+
+ const getDoctorSuggestions = async (req, res) => {
+  try {
+    const { symptoms } = req.body;
+    if (!symptoms || !symptoms.toString().trim()) {
+      return res.status(400).json({ error: "Symptoms / text are required" });
+    }
+
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    // 1) CLASSIFIER — decide whether input is greeting / general question / symptom
+    const classifyPrompt = `
+You are a short text classifier for a medical assistant.
+Classify the following USER TEXT into exactly one word: SYMPTOM, GENERAL, or GREETING.
+- SYMPTOM means the text describes human health problems or symptoms and should be used to find a medical speciality and doctors.
+- GENERAL means the text is a medical question or request for advice (not asking to book a doctor).
+- GREETING means a simple greeting like "hi", "hello", "hey" or similar.
+
+Return ONLY one of these words (no explanation).
+
+User text: """${symptoms}"""
+`;
+    const classifyResult = await model.generateContent(classifyPrompt);
+    const classifyToken = (classifyResult.response.text() || "").trim().toUpperCase();
+
+    // If classifier says GREETING -> return a greeting type
+    if (classifyToken.includes("GREETING")) {
+      return res.json({
+        type: "greeting",
+        message: "Hi! 👋 I am Prescripto AI. How can I help you today?"
+      });
+    }
+
+    // If classifier says GENERAL -> return concise medical advice using the model
+    if (classifyToken.includes("GENERAL")) {
+      const advicePrompt = `
+You are a concise, accurate medical assistant. Answer the user's medical question clearly and briefly (1-3 short paragraphs). 
+If the question is unrelated to human health, reply exactly: "Sorry, I can only answer human medical questions."
+
+User question: """${symptoms}"""
+`;
+      const adviceResult = await model.generateContent(advicePrompt);
+      const adviceText = (adviceResult.response.text() || "").trim();
+
+      return res.json({
+        type: "advice",
+        message: adviceText
+      });
+    }
+
+    // Else assume SYMPTOM (or fallback to symptom flow)
+    // 2) SPECIALITY DETECTION — ask model to return exact speciality or NO_MATCH
+    const specPrompt = `
+You are a medical assistant. The patient has these symptoms: """${symptoms}""".
+From the following list choose EXACTLY ONE token (and return ONLY that token, no extra text):
+- General physician
+- Gynecologist
+- Dermatologist
+- Pediatricians
+- Neurologist
+- Gastroenterologist
+
+If none of the above match, reply exactly: NO_MATCH
+
+Return one of: General physician OR Gynecologist OR Dermatologist OR Pediatricians OR Neurologist OR Gastroenterologist OR NO_MATCH.
+`;
+    const specResult = await model.generateContent(specPrompt);
+    const aiResponse = (specResult.response.text() || "").trim();
+
+    // If model says NO_MATCH -> return advice type with "sorry" message
+    if (aiResponse === "NO_MATCH" || /NO_MATCH/i.test(aiResponse)) {
+      return res.json({
+        type: "advice",
+        message: "Sorry, we do not have doctors for this."
+      });
+    }
+
+    // Otherwise assume aiResponse is one of the speciality names
+    const speciality = aiResponse;
+
+    // 3) Fetch earliest available doctors from DB (same as before)
+    const doctors = await doctorModel.find({ speciality })
+      .sort({ nextAvailable: 1 })
+      .limit(5);
+
+    // If no doctors found in DB, return advice fallback
+    if (!doctors || doctors.length === 0) {
+      return res.json({
+        type: "advice",
+        message: "Sorry, we do not have doctors for this."
+      });
+    }
+
+    // Success -> return doctors
+    return res.json({
+      type: "doctors",
+      speciality,
+      doctors,
+      message: null
+    });
+
+  } catch (err) {
+    console.error("getDoctorSuggestions error:", err);
+    return res.status(500).json({ error: "Server error / Gemini error" });
+  }
 };
 
 
@@ -294,4 +403,5 @@ export {
    cancelAppointment,
    paymentRazorpay,
    verifyRazorpay,
+   getDoctorSuggestions,
 };
