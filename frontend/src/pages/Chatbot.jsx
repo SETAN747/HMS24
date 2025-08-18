@@ -12,8 +12,15 @@ const PrescriptoAIChat = () => {
   const [picks, setPicks] = useState({}); // { [docId]: { dayIndex: 0, dateKey: "", time: "" } }
   const [booking, setBooking] = useState(false); // book API loading state
 
-  useEffect(() => {
-    // initial greeting message
+ useEffect(() => {
+  const saved = localStorage.getItem("chatMessages"); 
+  console.log(saved)
+
+  if (saved && JSON.parse(saved).length > 0) {
+    // Agar purani chat hai to wahi load karo
+    setMessages(JSON.parse(saved));
+  } else {
+    // Agar kuch bhi nahi hai to greeting dikhado
     setMessages([
       {
         type: "ai",
@@ -21,8 +28,25 @@ const PrescriptoAIChat = () => {
         text: "Hi! 👋 I’m Prescripto AI — describe your symptoms or ask a medical question.",
       },
     ]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }
+}, []);   
+
+useEffect(() => {
+  localStorage.setItem("chatMessages", JSON.stringify(messages));
+}, [messages]);
+
+
+const clearChat = () => {
+  const greeting = [
+    {
+      type: "ai",
+      subtype: "greeting",
+      text: "Hi! 👋 I’m Prescripto AI — describe your symptoms or ask a medical question.",
+    },
+  ];
+  setMessages(greeting);
+  localStorage.setItem("chatMessages", JSON.stringify(greeting));
+};
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -399,7 +423,7 @@ const PrescriptoAIChat = () => {
       </div>
 
       {/* Input area */}
-      <div className="p-3 border-t flex gap-2 ">
+      <div className="p-3 border-t flex gap-2  bg-white sticky bottom-0 ">
         <input
           type="text"
           className="flex-1 border rounded-full px-4 py-2"
@@ -412,6 +436,12 @@ const PrescriptoAIChat = () => {
           className="bg-blue-500 text-white px-5 py-2 rounded-full font-medium"
         >
           Send
+        </button> 
+         <button
+          onClick={clearChat}
+          className="bg-red-500 text-white px-4 py-2 rounded-full font-medium"
+        >
+          Clear
         </button>
       </div>
     </div>

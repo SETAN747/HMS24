@@ -1,13 +1,12 @@
 import validator from "validator";
 import bycrypt from "bcrypt";
 import userModel from "../models/userModel.js";
-import jwt from "jsonwebtoken"; 
-import { v2 as cloudinary } from "cloudinary"; 
-import doctorModel from "../models/doctorModel.js"; 
-import appointmentModel from "../models/appointmentModel.js"; 
+import jwt from "jsonwebtoken";
+import { v2 as cloudinary } from "cloudinary";
+import doctorModel from "../models/doctorModel.js";
+import appointmentModel from "../models/appointmentModel.js";
 import razorpayInstance from "../config/razorpay.js";
 import genAI from "../config/gemini.js";
-
 
 // API to register user
 const registerUser = async (req, res) => {
@@ -48,7 +47,7 @@ const registerUser = async (req, res) => {
     console.log(error);
     res.json({ success: false, message: error.message });
   }
-}; 
+};
 
 // API for user login
 const loginUser = async (req, res) => {
@@ -72,13 +71,12 @@ const loginUser = async (req, res) => {
     console.log(error);
     res.json({ success: false, message: error.message });
   }
-}; 
- 
+};
 
 // API to get user profile data
 const getProfile = async (req, res) => {
   try {
-    const userId  = req.user.userId;
+    const userId = req.user.userId;
     const useData = await userModel.findById(userId).select("-password");
 
     res.json({ success: true, user: useData });
@@ -90,9 +88,9 @@ const getProfile = async (req, res) => {
 
 // API to update user profile
 const updateProfile = async (req, res) => {
-  try { 
-    const userId = req.user.userId; 
-    const {  name, phone, address, dob, gender } = req.body;
+  try {
+    const userId = req.user.userId;
+    const { name, phone, address, dob, gender } = req.body;
     const imageFile = req.file;
 
     if (!name || !phone || !dob || !gender) {
@@ -122,16 +120,16 @@ const updateProfile = async (req, res) => {
     console.log(error);
     res.json({ success: false, message: error.message });
   }
-}; 
-   
+};
+
 // API to book appointment
 const bookAppointment = async (req, res) => {
   try {
-    const { docId, slotDate, slotTime } = req.body; 
+    const { docId, slotDate, slotTime } = req.body;
     const userId = req.user.userId; // token se mila hua
 
     const docData = await doctorModel.findById(docId).select("-password");
-     
+
     if (!docData.available) {
       return res.json({ success: false, message: "Doctor not available" });
     }
@@ -176,12 +174,12 @@ const bookAppointment = async (req, res) => {
     console.log(error);
     res.json({ success: false, message: error.message });
   }
-}; 
+};
 
- // API to get user appointments for frontend my-appointments page
+// API to get user appointments for frontend my-appointments page
 const listAppointment = async (req, res) => {
   try {
-     const userId = req.user.userId; // token se mila hua
+    const userId = req.user.userId; // token se mila hua
     const appointments = await appointmentModel.find({ userId });
 
     res.json({ success: true, appointments });
@@ -190,11 +188,11 @@ const listAppointment = async (req, res) => {
     res.json({ success: false, message: error.message });
   }
 };
- 
+
 // API to cancel appointment
 const cancelAppointment = async (req, res) => {
   try {
-    const { appointmentId } = req.body; 
+    const { appointmentId } = req.body;
     const userId = req.user.userId; // token se mila hua
 
     const appointmentData = await appointmentModel.findById(appointmentId);
@@ -227,15 +225,13 @@ const cancelAppointment = async (req, res) => {
     console.log(error);
     res.json({ success: false, message: error.message });
   }
-}; 
+};
 
 const paymentRazorpay = async (req, res) => {
   try {
     const { appointmentId } = req.body;
 
-    const appointmentData = await appointmentModel.findById(appointmentId); 
-
-    
+    const appointmentData = await appointmentModel.findById(appointmentId);
 
     if (!appointmentData) {
       return res.json({
@@ -260,8 +256,7 @@ const paymentRazorpay = async (req, res) => {
     console.log("error:", error);
     res.json({ success: false, message: error.message });
   }
-};  
-
+};
 
 // API to verify payment
 const verifyRazorpay = async (req, res) => {
@@ -282,11 +277,9 @@ const verifyRazorpay = async (req, res) => {
     console.log("error:", error);
     res.json({ success: false, message: error.message });
   }
-}; 
+};
 
- 
-
- const getDoctorSuggestions = async (req, res) => {
+const getDoctorSuggestions = async (req, res) => {
   try {
     const { symptoms } = req.body;
     if (!symptoms || !symptoms.toString().trim()) {
@@ -308,13 +301,15 @@ Return ONLY one of these words (no explanation).
 User text: """${symptoms}"""
 `;
     const classifyResult = await model.generateContent(classifyPrompt);
-    const classifyToken = (classifyResult.response.text() || "").trim().toUpperCase();
+    const classifyToken = (classifyResult.response.text() || "")
+      .trim()
+      .toUpperCase();
 
     // If classifier says GREETING -> return a greeting type
     if (classifyToken.includes("GREETING")) {
       return res.json({
         type: "greeting",
-        message: "Hi! 👋 I am Prescripto AI. How can I help you today?"
+        message: "Hi! 👋 I am Prescripto AI. How can I help you today?",
       });
     }
 
@@ -331,7 +326,7 @@ User question: """${symptoms}"""
 
       return res.json({
         type: "advice",
-        message: adviceText
+        message: adviceText,
       });
     }
 
@@ -358,7 +353,7 @@ Return one of: General physician OR Gynecologist OR Dermatologist OR Pediatricia
     if (aiResponse === "NO_MATCH" || /NO_MATCH/i.test(aiResponse)) {
       return res.json({
         type: "advice",
-        message: "Sorry, we do not have doctors for this."
+        message: "Sorry, we do not have doctors for this.",
       });
     }
 
@@ -366,7 +361,9 @@ Return one of: General physician OR Gynecologist OR Dermatologist OR Pediatricia
     const speciality = aiResponse;
 
     // 3) Fetch earliest available doctors from DB (same as before)
-    const doctors = await doctorModel.find({ speciality })
+    const doctors = await doctorModel
+      .find({ speciality })
+      .select("-email -password -about")
       .sort({ nextAvailable: 1 })
       .limit(5);
 
@@ -374,7 +371,7 @@ Return one of: General physician OR Gynecologist OR Dermatologist OR Pediatricia
     if (!doctors || doctors.length === 0) {
       return res.json({
         type: "advice",
-        message: "Sorry, we do not have doctors for this."
+        message: "Sorry, we do not have doctors for this.",
       });
     }
 
@@ -383,25 +380,23 @@ Return one of: General physician OR Gynecologist OR Dermatologist OR Pediatricia
       type: "doctors",
       speciality,
       doctors,
-      message: null
+      message: null,
     });
-
   } catch (err) {
     console.error("getDoctorSuggestions error:", err);
     return res.status(500).json({ error: "Server error / Gemini error" });
   }
 };
 
-
 export {
   registerUser,
   loginUser,
-   getProfile,
+  getProfile,
   updateProfile,
   bookAppointment,
-   listAppointment,
-   cancelAppointment,
-   paymentRazorpay,
-   verifyRazorpay,
-   getDoctorSuggestions,
+  listAppointment,
+  cancelAppointment,
+  paymentRazorpay,
+  verifyRazorpay,
+  getDoctorSuggestions,
 };
