@@ -40,6 +40,7 @@ const AppContextProvider = (props) => {
       });
       if (data.success) {
         setUserData(data.user);
+        console.log("data.user :",data.user)
       } else {
         toast.error(data.message);
       }

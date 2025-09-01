@@ -36,8 +36,10 @@ const Login = () => {
           password,
         });
         if (data.success) {
-          localStorage.setItem("token", data.token);
-          setToken(data.token);
+          toast.success("Account Created Successfully"); 
+          console.log("Account Created Successfully")
+          // localStorage.setItem("token", data.token);
+          // setToken(data.token);
         } else {
           toast.error(data.message);
         }

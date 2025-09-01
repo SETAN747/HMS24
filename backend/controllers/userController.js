@@ -77,7 +77,9 @@ const loginUser = async (req, res) => {
 const getProfile = async (req, res) => {
   try {
     const userId = req.user.userId;
-    const useData = await userModel.findById(userId).select("-password");
+    const useData = await userModel.findById(userId).select("-password"); 
+
+    console.log("useData :",useData)
 
     res.json({ success: true, user: useData });
   } catch (error) {
