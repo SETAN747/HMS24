@@ -24,9 +24,10 @@ const Login = () => {
           email,
           password,
         });
-        if (data.success) {
-          localStorage.setItem("token", data.token);
-          setToken(data.token);
+        if (data.success) { 
+          console.log("Account Created Successfully")
+          // localStorage.setItem("token", data.token);
+          // setToken(data.token);
         } else {
           toast.error(data.message);
         }
@@ -36,10 +37,9 @@ const Login = () => {
           password,
         });
         if (data.success) {
-          toast.success("Account Created Successfully"); 
-          console.log("Account Created Successfully")
-          // localStorage.setItem("token", data.token);
-          // setToken(data.token);
+          
+          localStorage.setItem("token", data.token);
+          setToken(data.token);
         } else {
           toast.error(data.message);
         }
