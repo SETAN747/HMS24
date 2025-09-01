@@ -25,7 +25,7 @@ const Login = () => {
           password,
         });
         if (data.success) { 
-          console.log("Account Created Successfully")
+          toast.success("Account Created Successfully")
           // localStorage.setItem("token", data.token);
           // setToken(data.token);
         } else {
