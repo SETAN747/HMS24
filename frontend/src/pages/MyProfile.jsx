@@ -120,7 +120,7 @@ const MyProfile = () => {
                     address: { ...prev.address, line1: e.target.value },
                   }))
                 }
-                value={userData.address.line1}
+                value={userData.address?.line1 || ""}
                 type="text"
               />
               <br />
@@ -132,15 +132,15 @@ const MyProfile = () => {
                     address: { ...prev.address, line2: e.target.value },
                   }))
                 }
-                value={userData.address.line2}
+                value={userData.address?.line2 || ""}
                 type="text"
               />
             </p>
           ) : (
             <p className="text-gray-500">
-              {userData.address.line1}
+              {userData.address?.line1}
               <br />
-              {userData.address.line2}
+              {userData.address?.line2}
             </p>
           )}
         </div>

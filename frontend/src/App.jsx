@@ -14,6 +14,7 @@ import Appointment from "./pages/Appointment";
 import PrescriptoAIChat from "./pages/Chatbot";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
+import OAuthCallback from "./pages/OAuthCallback";
 import { AppContext } from "./context/AppContext";
 
 // ProtectedRoute component
@@ -51,6 +52,7 @@ const App = () => {
             }
           />
           <Route path="/login" element={<Login />} />
+            <Route path="/oauth-callback" element={<OAuthCallback />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route

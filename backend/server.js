@@ -7,6 +7,9 @@ import connectCloudinary from './config/cloudinary.js'
 import adminRouter from './routes/adminRoute.js'
 import doctorRouter from './routes/doctorRoute.js';
 import userRouter from "./routes/userRoute.js";
+import cookieParser from "cookie-parser";
+import passport from "passport";
+import "./config/passport.js";
 
 
 //app config
@@ -14,7 +17,10 @@ dotenv.config();
 const app = express()
 const port = process.env.PORT || 4000 
 connectDB()
-connectCloudinary()
+connectCloudinary() 
+
+app.use(cookieParser());
+app.use(passport.initialize());
 
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS.split(",");

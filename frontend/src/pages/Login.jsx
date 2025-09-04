@@ -54,14 +54,33 @@ const Login = () => {
       console.log(token)
       navigate("/");
     }
-  }, [token]);
+  }, [token]); 
+
+
+  const handleGoogleLogin = () => {
+  window.location.href = `${backendUrl}/api/user/google`;
+};
 
   return (
     <form onSubmit={onSubmitHandler} className="min-h-[80vh] flex items-center">
       <div className="flex flex-col gap-3 m-auto items-center p-8 min-w-[340px] sm:min-w-96 border rounded-xl text-zinc-600 text-sm shadow-lg  ">
         <p className="text-2xl font-semibold">
           {state === "Sign Up" ? "Create Account" : "Login"}
-        </p>
+        </p> 
+         {/* 🔥 Google Login Button */}
+        <button
+          type="button"
+          onClick={handleGoogleLogin}
+          className="border border-zinc-300 w-full py-2 rounded-md text-base flex items-center justify-center gap-2 hover:bg-gray-100 transition"
+        >
+          <img
+            src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg"
+            alt="Google"
+            className="w-5 h-5"
+          />
+          Sign in with Google
+        </button>
+
         <p>
           Please {state === "Sign Up" ? "Sign up" : "Log in"} to book
           appointment

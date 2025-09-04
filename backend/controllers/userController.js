@@ -8,6 +8,12 @@ import appointmentModel from "../models/appointmentModel.js";
 import razorpayInstance from "../config/razorpay.js";
 import genAI from "../config/gemini.js";
 
+
+// ✅ Helper: Generate JWT Token
+const generateToken = (userId) => {
+  return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: "7d" });
+};
+
 // API to register user
 const registerUser = async (req, res) => {
   try {
@@ -25,6 +31,12 @@ const registerUser = async (req, res) => {
     // validating strong password
     if (password.length < 8) {
       return res.json({ success: false, message: "enter a strong password" });
+    }  
+
+     // Check if user already exists
+    const existingUser = await userModel.findOne({ email });
+    if (existingUser) {
+      return res.json({ success: false, message: "Email already registered" });
     }
 
     // hashing user password
@@ -35,19 +47,54 @@ const registerUser = async (req, res) => {
       name,
       email,
       password: hashedPassword,
+       authProvider: "local",
     };
 
     const newUser = new userModel(userData);
     const user = await newUser.save();
 
-    const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET);
+    const token = generateToken(user._id);
 
     res.json({ success: true, token });
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });
   }
+}; 
+
+
+
+
+ const googleAuthCallback = async (req, res) => {
+  try {
+    const user = req.user; // Passport verify se aya hua user
+    if (!user) {
+      return res.redirect(
+        `${process.env.FRONTEND_URL}/login?error=user_not_found`
+      );
+    }
+
+    // JWT create
+    const token = generateToken(user._id);
+
+    // Frontend ke liye redirect URL banaye
+    const url = new URL(process.env.FRONTEND_URL);
+    url.pathname = "/oauth-callback";
+    url.searchParams.set("token", token);
+
+    console.log("✅ USER from passport:", user);
+console.log("✅ Generated token:", token);
+console.log("✅ Redirect URL:", url.toString());
+
+    return res.redirect(url.toString()); 
+
+    
+  } catch (err) {
+    console.error(err);
+    return res.redirect(`${process.env.FRONTEND_URL}/login?error=oauth_failed`);
+  }
 };
+
 
 // API for user login
 const loginUser = async (req, res) => {
@@ -59,10 +106,18 @@ const loginUser = async (req, res) => {
       return res.json({ success: false, message: "User does not exist" });
     }
 
+     // If user is Google login only (no password)
+    if (!user.password) {
+      return res.json({
+        success: false,
+        message: "Please login with Google",
+      });
+    }
+
     const isMatch = await bycrypt.compare(password, user.password);
 
     if (isMatch) {
-      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+      const token = generateToken(user._id);
       res.json({ success: true, token });
     } else {
       res.json({ success: false, message: "Invalid credentials" });
@@ -401,4 +456,5 @@ export {
   paymentRazorpay,
   verifyRazorpay,
   getDoctorSuggestions,
+  googleAuthCallback,
 };

@@ -7,18 +7,13 @@ import { AppContext } from "../context/AppContext";
 const Navbar = () => {
   const navigate = useNavigate(); 
 
-   const { token, setToken, userData } = useContext(AppContext); 
+   const { token, setToken, userData , logout } = useContext(AppContext); 
 
   const [showMenu, setShowMenu] = useState(false);
   
 
 
-   const logout = () => {
-    setToken(false);
-    localStorage.removeItem("token"); 
-    navigate("/login");
-  };
-
+    
   return (
     <div className="flex items-center justify-between text-sm py-4 mb-5 border-b border-b-gray-400">
       <img

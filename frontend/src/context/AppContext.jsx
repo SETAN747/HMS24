@@ -1,4 +1,5 @@
 import { createContext, useEffect, useState } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
 
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -7,16 +8,16 @@ export const AppContext = createContext()
 
 const AppContextProvider = (props) => {
 
-  const currencySymbol = '$'
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;  
+  const currencySymbol = '₹ '
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;   
+
+   const navigate = useNavigate(); 
 
   
   const [doctors, setDoctors] = useState([]); 
-    const [token, setToken] = useState(
-    localStorage.getItem("token") ? localStorage.getItem("token") : false 
-  ); 
+     const [token, setToken] = useState(localStorage.getItem("token") || "");
 
-   const [userData, setUserData] = useState(false);
+   const [userData, setUserData] = useState({});
 
 
    const getDoctorsData = async () => {
@@ -48,7 +49,15 @@ const AppContextProvider = (props) => {
       console.log(error);
       toast.error(error.message);
     }
-  };
+  }; 
+
+  const logout = () => {
+  localStorage.removeItem("token"); // ✅ Clear token from localStorage
+  setToken("");                     // ✅ Reset state
+  setUserData(false); 
+   navigate("/login");              // ✅ Reset user data
+  toast.success("Logged out successfully");
+};
 
 
   const value = {
@@ -62,6 +71,7 @@ const AppContextProvider = (props) => {
      userData,
     setUserData,
     loadUserProfileData,
+      logout,
  
   } 
 

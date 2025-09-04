@@ -1,4 +1,6 @@
 import express from "express";
+import passport from "passport";
+import { googleAuthCallback } from "../controllers/userController.js"
 import {
   registerUser,
   loginUser,
@@ -32,6 +34,22 @@ userRouter.post("/cancel-appointment", authUser, cancelAppointment);
 userRouter.post("/payment-razorpay", authUser, paymentRazorpay); 
 userRouter.post("/verify-razorpay", authUser, verifyRazorpay); 
 userRouter.post("/get-doctor-suggestions",authUser,getDoctorSuggestions); 
+
+
+// START Google OAuth — redirect to Google
+userRouter.get(
+  "/google",
+  passport.authenticate("google", { scope: ["profile", "email"], session: false })
+);
+
+// Google OAuth callback
+userRouter.get(
+  "/google/callback",
+  passport.authenticate("google", { session: false, failureRedirect: "/" }),
+  googleAuthCallback
+); 
+
+
 
 
 export default userRouter;
