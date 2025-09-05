@@ -12,7 +12,11 @@ import genAI from "../config/gemini.js";
 // ✅ Helper: Generate JWT Token
 const generateToken = (userId) => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: "7d" });
-};
+}; 
+
+function generate6DigitCode() {
+  return Math.floor(100000 + Math.random() * 900000).toString(); // "123456"
+}
 
 // API to register user
 const registerUser = async (req, res) => {
@@ -207,7 +211,9 @@ const bookAppointment = async (req, res) => {
 
     const userData = await userModel.findById(userId).select("-password");
 
-    delete docData.slots_booked;
+    delete docData.slots_booked; 
+
+     const verificationCode = generate6DigitCode();
 
     const appointmentData = {
       userId,
@@ -218,6 +224,7 @@ const bookAppointment = async (req, res) => {
       slotTime,
       slotDate,
       date: Date.now(),
+      verificationCode,
     };
 
     const newAppointment = new appointmentModel(appointmentData);

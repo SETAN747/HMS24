@@ -63,6 +63,56 @@ const appointmentsDoctor = async (req, res) => {
     console.log(error);
     res.json({ success: false, message: error.message });
   }
+}; 
+
+
+const verifyAppointmentByCode = async (req, res) => {
+  try {
+    const { appointmentId, code } = req.body;
+    const doctorId = req.docId;
+
+    if (!appointmentId || !code) {
+      return res.json({ success: false, message: "AppointmentId and code required" });
+    }
+
+    const appt = await appointmentModel.findById(appointmentId);
+    if (!appt) return res.json({ success: false, message: "Appointment not found" }); 
+
+    
+
+  if (appt.docId.toString() !== doctorId.toString()) {
+  return res.json({ success: false, message: "Not authorized to verify this appointment" });
+}
+    if (appt.cancelled) {
+      return res.json({ success: false, message: "Appointment cancelled" });
+    }
+    if (appt.isVerified) {
+      return res.json({ success: false, message: "Appointment already verified" });
+    }
+
+    if (!appt.verificationCode) {
+      return res.json({ success: false, message: "No verification code available" });
+    }
+
+    // if (new Date() > new Date(appt.verificationExpiresAt)) {
+    //   return res.json({ success: false, message: "Verification code expired" });
+    // }
+
+    if (String(appt.verificationCode) !== String(code).trim()) {
+      return res.json({ success: false, message: "Invalid verification code" });
+    }
+
+    appt.isVerified = true;
+    appt.verifiedAt = new Date();
+    appt.verifiedBy = doctorId;
+    appt.verificationCode = undefined; // remove code after use (optional)
+    await appt.save();
+
+    return res.json({ success: true, message: "Appointment verified successfully" });
+  } catch (err) {
+    console.error(err);
+    return res.json({ success: false, message: err.message });
+  }
 };
 
 // API to mark appointment completed for doctor panel
@@ -182,4 +232,5 @@ export {
   doctorDashboard,
   doctorProfile,
   updateDoctorProfile,
+  verifyAppointmentByCode,
 };
