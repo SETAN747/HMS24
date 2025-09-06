@@ -12,8 +12,19 @@ const appointmentSchema = new mongoose.Schema({
   cancelled: { type: Boolean, default: false },
   payment: { type: Boolean, default: false },
   isCompleted: { type: Boolean, default: false },
-  verificationCode: { type: String },             
-  isVerified: { type: Boolean, default: false },   
+  verificationCode: { type: String },
+  isVerified: { type: Boolean, default: false },
+  rescheduled: { type: Boolean, default: false },
+  rescheduleHistory: [
+    {
+      fromDate: String,
+      fromTime: String,
+      toDate: String,
+      toTime: String,
+      by: String, // doctorId
+      at: Date,
+    },
+  ],
 });
 
 const appointmentModel =

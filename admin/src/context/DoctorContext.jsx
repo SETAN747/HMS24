@@ -103,7 +103,28 @@ const DoctorContextProvider = (props) => {
       console.log(error);
       toast.error(error.message);
     }
-  };
+  }; 
+
+  const rescheduleAppointment = async (appointmentId, newSlotDate, newSlotTime) => {
+  try {
+    const { data } = await axios.post(
+      backendUrl + "/api/doctor/reschedule-appointment",
+      { appointmentId, newSlotDate, newSlotTime },
+      { headers: { dToken } } // use correct header name
+    );
+    if (data.success) {
+      toast.success(data.message);
+      await getAppointments();
+      return { success: true, data };
+    } else {
+      toast.error(data.message);
+      return { success: false, message: data.message };
+    }
+  } catch (err) {
+    toast.error(err.response?.data?.message || err.message);
+    return { success: false, message: err.message };
+  }
+};
 
   const value = {
     dToken,
@@ -120,6 +141,7 @@ const DoctorContextProvider = (props) => {
     profileData,
     setProfileData,
     getProfileData,
+    rescheduleAppointment
   };
 
   return (

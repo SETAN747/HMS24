@@ -12,15 +12,20 @@ const DoctorAppointments = () => {
     getAppointments,
     completeAppointment,
     cancelAppointment,
-    backendUrl
+    backendUrl,
+    rescheduleAppointment,
   } = useContext(DoctorContext);
 
-  const { calculateAge, slotDateFormat, currency } =
-    useContext(AppContext);
+  const { calculateAge, slotDateFormat, currency } = useContext(AppContext);
 
   const [verifyingId, setVerifyingId] = useState(null);
   const [codeInput, setCodeInput] = useState("");
   const [loadingVerify, setLoadingVerify] = useState(false);
+
+  const [rescheduleId, setRescheduleId] = useState(null);
+  const [newDate, setNewDate] = useState("");
+  const [newTime, setNewTime] = useState("");
+  const [loadingReschedule, setLoadingReschedule] = useState(false);
 
   useEffect(() => {
     if (dToken) {
@@ -36,7 +41,7 @@ const DoctorAppointments = () => {
     setLoadingVerify(true);
     try {
       const { data } = await axios.post(
-        backendUrl +"/api/doctor/verify-appointment",
+        backendUrl + "/api/doctor/verify-appointment",
         { appointmentId, code: codeInput.trim() },
         { headers: { dToken } }
       );
@@ -55,7 +60,26 @@ const DoctorAppointments = () => {
     } finally {
       setLoadingVerify(false);
     }
-  };
+  }; 
+
+  const doReschedule = async (appointmentId) => {
+  if (!newDate || !newTime) {
+    toast.error("Provide date and time");
+    return;
+  }
+  setLoadingReschedule(true);
+  try {
+    const res = await rescheduleAppointment(appointmentId, newDate, newTime); // from DoctorContext
+    if (res.success) {
+      setRescheduleId(null);
+      setNewDate("");
+      setNewTime("");
+    }
+  } finally {
+    setLoadingReschedule(false);
+  }
+};
+
 
   return (
     <div className="w-full max-w-6xl m-5">
@@ -104,13 +128,11 @@ const DoctorAppointments = () => {
               </div>
 
               {/* Age */}
-              <p className="max-sm:hidden">
-                {calculateAge(item.userData.dob)}
-              </p>
+              <p className="max-sm:hidden">{calculateAge(item.userData.dob)}</p>
 
               {/* Date & Time */}
               <p>
-                {slotDateFormat(item.slotDate)}, {item.slotTime}
+                {slotDateFormat(item.slotDate)}, {item.slotTime} 
               </p>
 
               {/* Verify */}
@@ -156,9 +178,54 @@ const DoctorAppointments = () => {
                     >
                       Verify
                     </button>
-                    
                   </div>
                 )}
+
+                {rescheduleId === item._id ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="date"
+                      value={newDate}
+                      onChange={(e) => setNewDate(e.target.value)}
+                      className="px-2 py-1 border rounded"
+                    />
+                    <input
+                      type="text"
+                      placeholder="e.g. 10:00 AM - 10:30 AM"
+                      value={newTime}
+                      onChange={(e) => setNewTime(e.target.value)}
+                      className="px-2 py-1 border rounded w-40"
+                    />
+                    <button
+                      onClick={() => doReschedule(item._id)}
+                      className="px-2 py-1 bg-indigo-600 text-white rounded"
+                    >
+                      {loadingReschedule ? "..." : "Reschedule"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setRescheduleId(null);
+                        setNewDate("");
+                        setNewTime("");
+                      }}
+                      className="px-2 py-1 border rounded"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setRescheduleId(item._id);
+                      setNewDate(item.slotDate);
+                      setNewTime(item.slotTime);
+                    }}
+                    className="px-2 py-1 border rounded"
+                  >
+                    Reschedule
+                  </button>
+                )} 
+
               </div>
 
               {/* Fees */}

@@ -1,8 +1,114 @@
 import doctorModel from "../models/doctorModel.js";
 import bycrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import appointmentModel from "../models/appointmentModel.js";
+import appointmentModel from "../models/appointmentModel.js"; 
 
+
+function generate6DigitCode() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+} 
+
+const formatToDDMMYYYY = (dateString) => {
+  const [year, month, day] = dateString.split("-"); // "2025-09-06"
+  return `${day}_${month}_${year}`; // "06_09_2025"
+};
+
+ 
+
+ const appointmentReschedule = async (req, res) => {
+  try {
+    const { appointmentId, newSlotDate, newSlotTime } = req.body;
+    const doctorId = req.docId; // from authDoctor middleware
+
+    if (!appointmentId || !newSlotDate || !newSlotTime) {
+      return res.json({ success: false, message: "Missing parameters" });
+    }
+
+    // 1) Fetch appointment
+    const appt = await appointmentModel.findById(appointmentId);
+    if (!appt) {
+      return res.json({ success: false, message: "Appointment not found" });
+    }
+
+    // 2) Ownership check
+    if (String(appt.docId) !== String(doctorId)) {
+      return res.json({ success: false, message: "Not authorized to reschedule this appointment" });
+    }
+
+    // 3) Status check
+    if (appt.cancelled) {
+      return res.json({ success: false, message: "Appointment cancelled" });
+    }
+    if (appt.isCompleted) {
+      return res.json({ success: false, message: "Cannot reschedule completed appointment" });
+    }
+
+    // 4) Fetch doctor slots
+    const doc = await doctorModel.findById(doctorId);
+    if (!doc) {
+      return res.json({ success: false, message: "Doctor not found" });
+    }
+    let slots_booked = doc.slots_booked || {}; 
+
+    console.log("slots_booked: " , slots_booked)
+
+    // 5) Check if new slot is already booked
+    const bookedForDate = slots_booked[newSlotDate] || [];
+    if (bookedForDate.includes(newSlotTime)) {
+      return res.json({ success: false, message: "Requested slot already booked" });
+    }
+
+    // 6) Free old slot
+    const oldDate = appt.slotDate;
+    const oldTime = appt.slotTime;
+    if (slots_booked[oldDate]) {
+      slots_booked[oldDate] = slots_booked[oldDate].filter((t) => t !== oldTime);
+      if (slots_booked[oldDate].length === 0) {
+        delete slots_booked[oldDate];
+      }
+    }
+
+    // 7) Book new slot
+    slots_booked[newSlotDate] = slots_booked[newSlotDate] || [];
+    slots_booked[newSlotDate].push(newSlotTime);
+
+    await doctorModel.findByIdAndUpdate(doctorId, { slots_booked });
+
+    // 8) Update appointment
+    const newVerificationCode = generate6DigitCode();
+
+    appt.rescheduled = true;
+    appt.rescheduleHistory = appt.rescheduleHistory || [];
+    appt.rescheduleHistory.push({
+      fromDate: formatToDDMMYYYY(oldDate),
+      fromTime: oldTime,
+      toDate: formatToDDMMYYYY(newSlotDate),
+      toTime: newSlotTime,
+      by: doctorId,
+      at: new Date(),
+    });
+
+    appt.slotDate = formatToDDMMYYYY(newSlotDate);
+    appt.slotTime = newSlotTime;
+    appt.isVerified = false; // verification reset
+    appt.verificationCode = newVerificationCode;
+
+    await appt.save();
+
+    // 9) Response
+    return res.json({
+      success: true,
+      message: "Appointment rescheduled successfully",
+      verificationCode: newVerificationCode,
+      // appointment: appt,
+    });
+  } catch (err) {
+    console.error("Reschedule Error:", err);
+    return res.json({ success: false, message: err.message });
+  }
+}; 
+
+ 
 const changeAvailability = async (req, res) => {
   try {
     const { docId } = req.body;
@@ -233,4 +339,5 @@ export {
   doctorProfile,
   updateDoctorProfile,
   verifyAppointmentByCode,
+  appointmentReschedule,
 };
