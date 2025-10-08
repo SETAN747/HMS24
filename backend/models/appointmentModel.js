@@ -12,6 +12,7 @@ const appointmentSchema = new mongoose.Schema({
   cancelled: { type: Boolean, default: false },
   payment: { type: Boolean, default: false },
   isCompleted: { type: Boolean, default: false },
+  isReviewed: { type: Boolean, default: false },
   verificationCode: { type: String },
   isVerified: { type: Boolean, default: false },
   rescheduled: { type: Boolean, default: false },

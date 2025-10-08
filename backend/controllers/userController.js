@@ -5,8 +5,10 @@ import jwt from "jsonwebtoken";
 import { v2 as cloudinary } from "cloudinary";
 import doctorModel from "../models/doctorModel.js";
 import appointmentModel from "../models/appointmentModel.js";
+import reviewModel from "../models/reviewModel.js";
 import razorpayInstance from "../config/razorpay.js";
 import genAI from "../config/gemini.js";
+
 
 
 // ✅ Helper: Generate JWT Token
@@ -138,7 +140,7 @@ const getProfile = async (req, res) => {
     const userId = req.user.userId;
     const useData = await userModel.findById(userId).select("-password"); 
 
-    console.log("useData :",useData)
+    // console.log("useData :",useData)
 
     res.json({ success: true, user: useData });
   } catch (error) {
@@ -450,6 +452,61 @@ Return one of: General physician OR Gynecologist OR Dermatologist OR Pediatricia
     console.error("getDoctorSuggestions error:", err);
     return res.status(500).json({ error: "Server error / Gemini error" });
   }
+}; 
+
+ const addReview = async (req, res) => {
+  try {
+    const { appointmentId, rating, reviewText, websiteExperience } = req.body;
+    const userId = req.user.userId; 
+
+    if (!appointmentId || !rating) {
+      return res.json({ success: false, message: "Appointment ID and rating are required" });
+    }
+
+    // ✅ Check appointment existence
+    const appointment = await appointmentModel.findById(appointmentId);
+    if (!appointment) {
+      return res.json({ success: false, message: "Appointment not found" });
+    }
+
+    // ✅ Check completion
+    if (!appointment.isCompleted) {
+      return res.json({ success: false, message: "You can review only after completion" });
+    }
+
+    // ✅ Prevent duplicate review
+    const existing = await reviewModel.findOne({ appointmentId });
+    if (existing) {
+      return res.json({ success: false, message: "You already reviewed this appointment" });
+    }
+
+    // ✅ Create review
+    const newReview = new reviewModel({
+      appointmentId,
+      userId,
+      docId: appointment.docId,
+      rating,
+      reviewText,
+      websiteExperience,
+    });
+    await newReview.save();
+
+    // ✅ Update doctor rating (optional but recommended)
+    const reviews = await reviewModel.find({ docId: appointment.docId });
+    const avgRating = reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length;
+
+    await doctorModel.findByIdAndUpdate(appointment.docId, {
+      $set: { averageRating: avgRating.toFixed(1), totalReviews: reviews.length },
+    });
+
+    appointment.isReviewed = true ;
+    await appointment.save(); 
+
+    res.json({ success: true, message: "Review added successfully" });
+  } catch (error) {
+    console.error(error);
+    res.json({ success: false, message: error.message });
+  }
 };
 
 export {
@@ -464,4 +521,5 @@ export {
   verifyRazorpay,
   getDoctorSuggestions,
   googleAuthCallback,
+  addReview,
 };

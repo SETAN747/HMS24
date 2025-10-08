@@ -17,7 +17,7 @@ const AppContextProvider = (props) => {
   const [doctors, setDoctors] = useState([]); 
      const [token, setToken] = useState(localStorage.getItem("token") || "");
 
-   const [userData, setUserData] = useState({});
+  const [userData, setUserData] = useState({});
 
 
    const getDoctorsData = async () => {
@@ -54,7 +54,7 @@ const AppContextProvider = (props) => {
   const logout = () => {
   localStorage.removeItem("token"); // ✅ Clear token from localStorage
   setToken("");                     // ✅ Reset state
-  setUserData(false); 
+  setUserData({}); 
    navigate("/login");              // ✅ Reset user data
   toast.success("Logged out successfully");
 };

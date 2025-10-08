@@ -16,6 +16,8 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import OAuthCallback from "./pages/OAuthCallback";
 import { AppContext } from "./context/AppContext";
+import { useCall } from "./context/CallContext";
+import PatientCall from "./components/PatientCall";
 
 // ProtectedRoute component
 const ProtectedRoute = ({ children }) => {
@@ -28,6 +30,8 @@ const ProtectedRoute = ({ children }) => {
 };
 
 const App = () => {
+  const { incomingCallDoctor, setIncomingCallDoctor } = useCall();
+
   return (
     <>
       <div className="mx-4 sm:mx-[10%]">
@@ -52,7 +56,7 @@ const App = () => {
             }
           />
           <Route path="/login" element={<Login />} />
-            <Route path="/oauth-callback" element={<OAuthCallback />} />
+          <Route path="/oauth-callback" element={<OAuthCallback />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route
@@ -89,6 +93,13 @@ const App = () => {
           />
         </Routes>
         <Footer />
+        {/* ✅ Global Call Popup */}
+        {incomingCallDoctor && (
+          <PatientCall
+            doctor={incomingCallDoctor}
+            onClose={() => setIncomingCallDoctor(null)}
+          />
+        )}
       </div>
     </>
   );

@@ -10,13 +10,16 @@ import userRouter from "./routes/userRoute.js";
 import cookieParser from "cookie-parser";
 import passport from "passport";
 import "./config/passport.js";
+import { createServer } from "http";   // ✅ import http
+import { initSocket } from "./config/socket.io.js";  // ✅ import socket.io config
 
 
 //app config
 dotenv.config();
+connectDB()
 const app = express()
 const port = process.env.PORT || 4000 
-connectDB()
+
 connectCloudinary() 
 
 app.use(cookieParser());
@@ -40,9 +43,21 @@ app.use('/api/admin',adminRouter)
 app.use("/api/doctor", doctorRouter);
 app.use("/api/user", userRouter);
 
-app.get('/',(req,res)=>{
+app.get('/',(req, res)=>{
   res.send('API Working')
 })
 
 
-app.listen(port ,()=>{console.log("server started" , port)})
+// app.listen(port ,()=>{console.log("server started" , port)}) 
+
+
+// ✅ Create HTTP server
+const server = createServer(app);
+
+// ✅ Initialize socket.io (from separate file)
+initSocket(server, allowedOrigins);
+
+// ✅ Start server
+server.listen(port, () => {
+  console.log("🚀 Server started on port", port);
+});
