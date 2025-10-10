@@ -1,26 +1,31 @@
 import { createContext, useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { getSocket } from "../services/socket";
 
 import axios from "axios";
 import { toast } from "react-toastify";
 
-export const AppContext = createContext()
+export const AppContext = createContext();
 
 const AppContextProvider = (props) => {
+  const currencySymbol = "₹ ";
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-  const currencySymbol = '₹ '
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;   
+  const navigate = useNavigate();
 
-   const navigate = useNavigate(); 
-
-  
-  const [doctors, setDoctors] = useState([]); 
-     const [token, setToken] = useState(localStorage.getItem("token") || "");
+  const [doctors, setDoctors] = useState([]);
+  const [token, setToken] = useState(localStorage.getItem("token") || "");
 
   const [userData, setUserData] = useState({});
 
+  useEffect(() => {
+    const socket = getSocket();
+    if (userData?._id) {
+      socket.emit("joinForNotification", userData._id); // 👈 Yeh hai MongoDB user._id
+    }
+  }, [userData]);
 
-   const getDoctorsData = async () => {
+  const getDoctorsData = async () => {
     try {
       const { data } = await axios.get(backendUrl + "/api/doctor/list");
       if (data.success) {
@@ -32,7 +37,7 @@ const AppContextProvider = (props) => {
       console.log(error);
       toast.error(error.message);
     }
-  }; 
+  };
 
   const loadUserProfileData = async () => {
     try {
@@ -41,7 +46,7 @@ const AppContextProvider = (props) => {
       });
       if (data.success) {
         setUserData(data.user);
-        console.log("data.user",data.user)
+        console.log("data.user", data.user);
       } else {
         toast.error(data.message);
       }
@@ -49,37 +54,34 @@ const AppContextProvider = (props) => {
       console.log(error);
       toast.error(error.message);
     }
-  }; 
+  };
 
   const logout = () => {
-  localStorage.removeItem("token"); // ✅ Clear token from localStorage
-  setToken("");                     // ✅ Reset state
-  setUserData({}); 
-   navigate("/login");              // ✅ Reset user data
-  toast.success("Logged out successfully");
-};
-
+    localStorage.removeItem("token"); // ✅ Clear token from localStorage
+    setToken(""); // ✅ Reset state
+    setUserData({});
+    navigate("/login"); // ✅ Reset user data
+    toast.success("Logged out successfully");
+  };
 
   const value = {
-     
     doctors,
-     getDoctorsData,
+    getDoctorsData,
     currencySymbol,
-     token,
+    token,
     setToken,
     backendUrl,
-     userData,
+    userData,
     setUserData,
     loadUserProfileData,
-      logout,
- 
-  } 
+    logout,
+  };
 
-   useEffect(() => {
+  useEffect(() => {
     getDoctorsData();
-  }, []); 
+  }, []);
 
-    useEffect(() => {
+  useEffect(() => {
     if (token) {
       loadUserProfileData();
     } else {
@@ -88,10 +90,8 @@ const AppContextProvider = (props) => {
   }, [token]);
 
   return (
-    <AppContext.Provider value={value}>
-      {props.children}
-    </AppContext.Provider>
-  )
-}
+    <AppContext.Provider value={value}>{props.children}</AppContext.Provider>
+  );
+};
 
-export default AppContextProvider
+export default AppContextProvider;

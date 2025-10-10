@@ -18,7 +18,11 @@ export const initSocket = (server, allowedOrigins) => {
   // Socket.io events
   io.on("connection", (socket) => {
     console.log("🔗 New client connected:", socket.id);
-      console.log("✅ Connected to socket server:", socket.id);
+    console.log("✅ Connected to socket server:", socket.id);
+    socket.on("joinForNotification", (userId) => {
+      socket.join(userId); // 👈 userId = MongoDB user._id
+      console.log(`User ${userId} joined their private room`);
+    });
     callHandlers(io, socket); // ✅ attach call handlers
   });
 
@@ -31,4 +35,4 @@ export const getIO = () => {
     throw new Error("❌ Socket.io not initialized yet!");
   }
   return io;
-}; 
+};

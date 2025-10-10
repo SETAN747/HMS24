@@ -6,15 +6,16 @@ import { v2 as cloudinary } from "cloudinary";
 import doctorModel from "../models/doctorModel.js";
 import appointmentModel from "../models/appointmentModel.js";
 import reviewModel from "../models/reviewModel.js";
+import notificationModel from "../models/notificationModel.js";
 import razorpayInstance from "../config/razorpay.js";
-import genAI from "../config/gemini.js";
-
+import genAI from "../config/gemini.js"; 
+import { getIO } from "../config/socket.io.js";
 
 
 // ✅ Helper: Generate JWT Token
 const generateToken = (userId) => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: "7d" });
-}; 
+};
 
 function generate6DigitCode() {
   return Math.floor(100000 + Math.random() * 900000).toString(); // "123456"
@@ -37,9 +38,9 @@ const registerUser = async (req, res) => {
     // validating strong password
     if (password.length < 8) {
       return res.json({ success: false, message: "enter a strong password" });
-    }  
+    }
 
-     // Check if user already exists
+    // Check if user already exists
     const existingUser = await userModel.findOne({ email });
     if (existingUser) {
       return res.json({ success: false, message: "Email already registered" });
@@ -53,7 +54,7 @@ const registerUser = async (req, res) => {
       name,
       email,
       password: hashedPassword,
-       authProvider: "local",
+      authProvider: "local",
     };
 
     const newUser = new userModel(userData);
@@ -66,12 +67,9 @@ const registerUser = async (req, res) => {
     console.log(error);
     res.json({ success: false, message: error.message });
   }
-}; 
+};
 
-
-
-
- const googleAuthCallback = async (req, res) => {
+const googleAuthCallback = async (req, res) => {
   try {
     const user = req.user; // Passport verify se aya hua user
     if (!user) {
@@ -89,18 +87,15 @@ const registerUser = async (req, res) => {
     url.searchParams.set("token", token);
 
     console.log("✅ USER from passport:", user);
-console.log("✅ Generated token:", token);
-console.log("✅ Redirect URL:", url.toString());
+    console.log("✅ Generated token:", token);
+    console.log("✅ Redirect URL:", url.toString());
 
-    return res.redirect(url.toString()); 
-
-    
+    return res.redirect(url.toString());
   } catch (err) {
     console.error(err);
     return res.redirect(`${process.env.FRONTEND_URL}/login?error=oauth_failed`);
   }
 };
-
 
 // API for user login
 const loginUser = async (req, res) => {
@@ -112,7 +107,7 @@ const loginUser = async (req, res) => {
       return res.json({ success: false, message: "User does not exist" });
     }
 
-     // If user is Google login only (no password)
+    // If user is Google login only (no password)
     if (!user.password) {
       return res.json({
         success: false,
@@ -138,7 +133,7 @@ const loginUser = async (req, res) => {
 const getProfile = async (req, res) => {
   try {
     const userId = req.user.userId;
-    const useData = await userModel.findById(userId).select("-password"); 
+    const useData = await userModel.findById(userId).select("-password");
 
     // console.log("useData :",useData)
 
@@ -213,9 +208,9 @@ const bookAppointment = async (req, res) => {
 
     const userData = await userModel.findById(userId).select("-password");
 
-    delete docData.slots_booked; 
+    delete docData.slots_booked;
 
-     const verificationCode = generate6DigitCode();
+    const verificationCode = generate6DigitCode();
 
     const appointmentData = {
       userId,
@@ -234,6 +229,18 @@ const bookAppointment = async (req, res) => {
 
     // save new slots data in docData
     await doctorModel.findByIdAndUpdate(docId, { slots_booked });
+
+    // Notification DB me save
+    const notification = await notificationModel.create({
+      userId: appointmentData.userId,
+      title: "Appointment Confirmed ✅",
+      message: "Your appointment is confirmed!",
+      link: "/my-appointments",
+    });
+
+    // Real-time emit 
+    const io = getIO();
+    io.to(appointmentData.userId).emit("new-notification", notification); 
 
     res.json({ success: true, message: "Appointment Booked" });
   } catch (error) {
@@ -284,7 +291,19 @@ const cancelAppointment = async (req, res) => {
       (e) => e !== slotTime
     );
 
-    await doctorModel.findByIdAndUpdate(docId, { slots_booked });
+    await doctorModel.findByIdAndUpdate(docId, { slots_booked }); 
+
+    // Notification DB me save
+    const notification = await notificationModel.create({
+      userId: appointmentData.userId,
+      title: "Appointment Cancelled Successfully ✅",
+      message: "Your appointment is Cancelled!",
+      link: "/my-appointments",
+    });
+
+    // Real-time emit 
+    const io = getIO();
+    io.to(appointmentData.userId).emit("new-notification", notification); 
 
     res.json({ success: true, message: "Appointment Cancelled" });
   } catch (error) {
@@ -452,15 +471,18 @@ Return one of: General physician OR Gynecologist OR Dermatologist OR Pediatricia
     console.error("getDoctorSuggestions error:", err);
     return res.status(500).json({ error: "Server error / Gemini error" });
   }
-}; 
+};
 
- const addReview = async (req, res) => {
+const addReview = async (req, res) => {
   try {
     const { appointmentId, rating, reviewText, websiteExperience } = req.body;
-    const userId = req.user.userId; 
+    const userId = req.user.userId;
 
     if (!appointmentId || !rating) {
-      return res.json({ success: false, message: "Appointment ID and rating are required" });
+      return res.json({
+        success: false,
+        message: "Appointment ID and rating are required",
+      });
     }
 
     // ✅ Check appointment existence
@@ -471,13 +493,19 @@ Return one of: General physician OR Gynecologist OR Dermatologist OR Pediatricia
 
     // ✅ Check completion
     if (!appointment.isCompleted) {
-      return res.json({ success: false, message: "You can review only after completion" });
+      return res.json({
+        success: false,
+        message: "You can review only after completion",
+      });
     }
 
     // ✅ Prevent duplicate review
     const existing = await reviewModel.findOne({ appointmentId });
     if (existing) {
-      return res.json({ success: false, message: "You already reviewed this appointment" });
+      return res.json({
+        success: false,
+        message: "You already reviewed this appointment",
+      });
     }
 
     // ✅ Create review
@@ -493,19 +521,38 @@ Return one of: General physician OR Gynecologist OR Dermatologist OR Pediatricia
 
     // ✅ Update doctor rating (optional but recommended)
     const reviews = await reviewModel.find({ docId: appointment.docId });
-    const avgRating = reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length;
+    const avgRating =
+      reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length;
 
     await doctorModel.findByIdAndUpdate(appointment.docId, {
-      $set: { averageRating: avgRating.toFixed(1), totalReviews: reviews.length },
+      $set: {
+        averageRating: avgRating.toFixed(1),
+        totalReviews: reviews.length,
+      },
     });
 
-    appointment.isReviewed = true ;
-    await appointment.save(); 
+    appointment.isReviewed = true;
+    await appointment.save();
 
     res.json({ success: true, message: "Review added successfully" });
   } catch (error) {
     console.error(error);
     res.json({ success: false, message: error.message });
+  }
+};
+
+const getUserNotifications = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    const notifications = await notificationModel
+      .find({ userId })
+      .sort({ createdAt: -1 });
+
+    res.json({ success: true, notifications });
+  } catch (error) {
+    console.error("Error fetching notifications:", error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -522,4 +569,5 @@ export {
   getDoctorSuggestions,
   googleAuthCallback,
   addReview,
+  getUserNotifications,
 };
