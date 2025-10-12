@@ -14,6 +14,7 @@ import {
    getDoctorSuggestions,
    addReview,
    getUserNotifications,
+   markNotificationAsRead,
 } from "../controllers/userController.js"; 
 import authUser from "../middlewares/authUser.js";
 import upload from "../middlewares/multer.js";
@@ -38,6 +39,7 @@ userRouter.post("/verify-razorpay", authUser, verifyRazorpay);
 userRouter.post("/get-doctor-suggestions",authUser,getDoctorSuggestions); 
 userRouter.post("/add-review", authUser, addReview); 
 userRouter.get("/getUserNotifications",authUser,getUserNotifications)
+userRouter.post("/markNotificationAsRead", authUser, markNotificationAsRead);
 
 
 // START Google OAuth — redirect to Google

@@ -8,9 +8,8 @@ import appointmentModel from "../models/appointmentModel.js";
 import reviewModel from "../models/reviewModel.js";
 import notificationModel from "../models/notificationModel.js";
 import razorpayInstance from "../config/razorpay.js";
-import genAI from "../config/gemini.js"; 
+import genAI from "../config/gemini.js";
 import { getIO } from "../config/socket.io.js";
-
 
 // ✅ Helper: Generate JWT Token
 const generateToken = (userId) => {
@@ -231,16 +230,18 @@ const bookAppointment = async (req, res) => {
     await doctorModel.findByIdAndUpdate(docId, { slots_booked });
 
     // Notification DB me save
+    const notificationMessage = `Your appointment with ${appointmentData.docData.name} (${appointmentData.docData.speciality}) has been successfully booked for ${appointmentData.slotDate} at ${appointmentData.slotTime}. Consultation Fee: ₹${appointmentData.amount}.`;
+
     const notification = await notificationModel.create({
       userId: appointmentData.userId,
       title: "Appointment Confirmed ✅",
-      message: "Your appointment is confirmed!",
+      message: notificationMessage,
       link: "/my-appointments",
     });
 
-    // Real-time emit 
+    // Real-time emit
     const io = getIO();
-    io.to(appointmentData.userId).emit("new-notification", notification); 
+    io.to(appointmentData.userId).emit("new-notification", notification);
 
     res.json({ success: true, message: "Appointment Booked" });
   } catch (error) {
@@ -291,19 +292,21 @@ const cancelAppointment = async (req, res) => {
       (e) => e !== slotTime
     );
 
-    await doctorModel.findByIdAndUpdate(docId, { slots_booked }); 
+    await doctorModel.findByIdAndUpdate(docId, { slots_booked });
+
+    const doctorName = doctorData.name || "the doctor";
 
     // Notification DB me save
     const notification = await notificationModel.create({
       userId: appointmentData.userId,
       title: "Appointment Cancelled Successfully ✅",
-      message: "Your appointment is Cancelled!",
+      message: `Your appointment with ${doctorName} has been cancelled.`,
       link: "/my-appointments",
     });
 
-    // Real-time emit 
+    // Real-time emit
     const io = getIO();
-    io.to(appointmentData.userId).emit("new-notification", notification); 
+    io.to(appointmentData.userId).emit("new-notification", notification);
 
     res.json({ success: true, message: "Appointment Cancelled" });
   } catch (error) {
@@ -353,6 +356,26 @@ const verifyRazorpay = async (req, res) => {
       await appointmentModel.findByIdAndUpdate(orderInfo.receipt, {
         payment: true,
       });
+
+      // Inside verifyRazorpay after confirming payment success
+      const appointmentData = await appointmentModel.findById(
+        orderInfo.receipt
+      );
+
+      // const userData = await userModel.findById(appointmentData.userId);
+
+      const notificationMessage = `Your payment of ₹${appointmentData.amount} for the appointment with ${appointmentData.docData.name} (${appointmentData.docData.speciality}) is successful.`;
+
+      const notification = await notificationModel.create({
+        userId: appointmentData.userId,
+        title: "Payment Successful 💳",
+        message: notificationMessage,
+        link: "/my-appointments",
+      });
+
+      // Real-time emit
+      const io = getIO();
+      io.to(appointmentData.userId).emit("new-notification", notification);
 
       res.json({ success: true, message: "Payment successfull" });
     } else {
@@ -534,6 +557,19 @@ const addReview = async (req, res) => {
     appointment.isReviewed = true;
     await appointment.save();
 
+    const notificationMessage = `Thank You ${appointment.userData.name} , You submitted a review for ${appointment.docData.name}.`;
+
+    const notification = await notificationModel.create({
+      userId: appointment.userId, // send to doctor or admin
+      title: "Your Review Submitted Successfully ⭐",
+      message: notificationMessage,
+      link: "/doctor-reviews", // internal dashboard
+    });
+
+    // Real-time emit
+    const io = getIO();
+    io.to(appointment.userId).emit("new-notification", notification);
+
     res.json({ success: true, message: "Review added successfully" });
   } catch (error) {
     console.error(error);
@@ -556,6 +592,29 @@ const getUserNotifications = async (req, res) => {
   }
 };
 
+const markNotificationAsRead = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    // 🔹 Sabhi unread notifications ko read mark karo
+    const result = await notificationModel.updateMany(
+      { userId, isRead: false },
+      { $set: { isRead: true } }
+    );
+
+    res.json({
+      success: true,
+      message: `${result.modifiedCount} notifications marked as read`,
+    });
+  } catch (err) {
+    console.error("Error marking notifications as read:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
 export {
   registerUser,
   loginUser,
@@ -570,4 +629,5 @@ export {
   googleAuthCallback,
   addReview,
   getUserNotifications,
+  markNotificationAsRead,
 };

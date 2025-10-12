@@ -1,38 +1,73 @@
-import React, { useState, useContext , useEffect } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { assets } from "../assets/assets";
 import { NavLink, useNavigate } from "react-router-dom";
 import "../index.css";
 import { AppContext } from "../context/AppContext";
 import { FaBell } from "react-icons/fa";
 import { getSocket } from "../services/socket";
+import axios from "axios";
 
 const Navbar = () => {
   const navigate = useNavigate();
 
-  const { token, setToken, userData, logout } = useContext(AppContext);
+  const { token, setToken, userData, logout, backendUrl } =
+    useContext(AppContext);
 
-  const [showMenu, setShowMenu] = useState(false); 
+  const [showMenu, setShowMenu] = useState(false);
 
   const [showNotifications, setShowNotifications] = useState(false);
-const [notifications, setNotifications] = useState([
-  // temporary dummy data, backend connect hone ke baad API se aayega
-  { id: 1, message: "Your appointment with Dr. Mehta is confirmed!", read: false },
-  { id: 2, message: "New message from Dr. Patel", read: false },
-  { id: 3, message: "Appointment completed successfully!", read: true }, 
-]); 
+  const [notifications, setNotifications] = useState([]);
 
-const socket = getSocket()
+  const socket = getSocket();
 
-useEffect(() => { 
-  console.log("new-notification is comming")
-  socket.on("new-notification", (notif) => { 
-    
-    setNotifications((prev) => [notif, ...prev]);
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const { data } = await axios.get(
+          `${backendUrl}/api/user/getUserNotifications`,
+          {
+            headers: { token },
+          }
+        );
+        if (data.success) {
+          setNotifications(data.notifications);
+          console.log(data.notifications);
+        }
+      } catch (err) {
+        console.error("Error fetching notifications:", err);
+      }
+    };
 
-  });
+    if (token) fetchNotifications();
+  }, [token, backendUrl]);
 
-  return () => socket.off("new-notification");
-}, []);
+  useEffect(() => {
+    console.log("new-notification is comming");
+    socket.on("new-notification", (notif) => {
+      console.log("📩 Real-time notification received:", notif);
+      setNotifications((prev) => [notif, ...prev]);
+    });
+
+    // return () => socket.off("new-notification");
+  }, [socket]);
+
+  const handleNotificationClick = async () => {
+    const newState = !showNotifications;
+    setShowNotifications(newState);
+
+    if (newState) {
+      try {
+        // 🔹 API call to mark all unread as read
+        await axios.post(
+          `${backendUrl}/api/user/markNotificationAsRead`,
+          {},
+          { headers: { token } }
+        );
+      } catch (err) {
+        console.error("Error marking notifications as read:", err);
+      }
+    }
+  };
 
   return (
     <div className="flex items-center justify-between text-sm py-4 mb-5 border-b border-b-gray-400">
@@ -67,73 +102,109 @@ useEffect(() => {
       <div className="flex items-center gap-4">
         {token && userData ? (
           <div className="flex items-center gap-2 cursor-pointer  relative">
-            <div className="relative cursor-pointer gap-6 right-5" >
+            <div className="relative cursor-pointer gap-6 right-5">
               <FaBell
                 className="text-gray-700 text-xl hover:text-customPrimary transition "
-                onClick={() => setShowNotifications(!showNotifications)}
+                onClick={handleNotificationClick}
               />
               {/* Optional red dot for unread notifications */}
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1 rounded-full">
-                {notifications.filter((n) => !n.read).length}
-              </span> 
 
-                {showNotifications && (
-    <div className="absolute right-0 mt-3 w-80 bg-white shadow-xl rounded-xl border border-gray-200 z-50">
-      <div className="p-3 font-semibold border-b text-gray-700">
-        Notifications
-      </div>
-      <div className="max-h-64 overflow-y-auto">
-        {notifications.length > 0 ? (
-          notifications.map((n) => (
-            <div
-              key={n.id}
-              className={`px-4 py-2 text-sm border-b hover:bg-gray-100 transition ${
-                n.read ? "text-gray-500" : "text-gray-800 font-medium"
-              }`}
-            >
-              {n.message}
-            </div>
-          ))
-        ) : (
-          <div className="p-4 text-gray-500 text-center text-sm">
-            No new notifications
-          </div>
-        )}
-      </div>
-      <div
-        onClick={() => navigate("/notifications")}
-        className="text-center py-2 text-customPrimary font-medium cursor-pointer hover:bg-gray-50"
-      >
-        View all
-      </div>
-    </div>
-  )}
+              {notifications.filter((n) => !n.isRead).length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1 rounded-full">
+                  {notifications.filter((n) => !n.isRead).length}
+                </span>
+              )}
 
+              {showNotifications && (
+                <div className="absolute right-0 mt-3 w-80 bg-white shadow-2xl rounded-2xl border border-gray-200 z-50">
+                  {/* Header */}
+                  <div className="p-3 font-semibold border-b text-gray-700 flex justify-between items-center">
+                    <span>Notifications</span>
+                    <span className="text-xs text-gray-500">
+                      {notifications.filter((n) => !n.isRead).length} new
+                    </span>
+                  </div>
+
+                  {/* Notification List */}
+                  <div className="max-h-72 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
+                    {notifications.length > 0 ? (
+                      notifications.map((n) => (
+                        <div
+                          key={n._id}
+                          className={`p-3 border-b last:border-none cursor-pointer transition-all duration-150 hover:bg-gray-50 ${
+                            n.isRead
+                              ? "text-gray-500"
+                              : "text-gray-800 font-medium bg-gray-50/40"
+                          }`}
+                        >
+                          {/* Title */}
+                          <div className="flex justify-between items-center">
+                            <p className="text-sm font-semibold text-gray-800 truncate">
+                              {n.title}
+                            </p>
+                            {!n.isRead && (
+                              <span className="w-2 h-2 bg-customPrimary rounded-full ml-2"></span>
+                            )}
+                          </div>
+
+                          {/* Message */}
+                          <p className="text-sm text-gray-600 mt-1">
+                            {n.message}
+                          </p>
+
+                          {/* Time */}
+                          <p className="text-xs text-gray-400 mt-2">
+                            {new Date(n.createdAt).toLocaleString()}
+                          </p>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-6 text-gray-500 text-center text-sm">
+                        No new notifications
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Footer */}
+                  <div
+                    onClick={() => navigate("/notifications")}
+                    className="text-center py-2 text-customPrimary font-medium cursor-pointer hover:bg-gray-50 border-t"
+                  >
+                    View all
+                  </div>
+                </div>
+              )}
             </div>
-             <div className="relative group cursor-pointer flex items-center gap-2"> 
-              <img className="w-8 rounded-full" src={userData.image} alt="user" />
-            <img className="w-2.5" src={assets.dropdown_icon} alt="" />
-            <div className="absolute top-0 right-0 pt-14 text-base font-medium text-gray-600 z-20 hidden group-hover:block">
-              <div className="min-w-48  bg-stone-100 rounded flex flex-col gap-4 p-4">
-                <p
-                  onClick={() => navigate("my-profile")}
-                  className="hover:text-black cursor-pointer"
-                >
-                  My Profile
-                </p>
-                <p
-                  onClick={() => navigate("my-appointments")}
-                  className="hover:text-black cursor-pointer"
-                >
-                  My Appointments
-                </p>
-                <p onClick={logout} className="hover:text-black cursor-pointer">
-                  Logout
-                </p>
+            <div className="relative group cursor-pointer flex items-center gap-2">
+              <img
+                className="w-8 rounded-full"
+                src={userData.image}
+                alt="user"
+              />
+              <img className="w-2.5" src={assets.dropdown_icon} alt="" />
+              <div className="absolute top-0 right-0 pt-14 text-base font-medium text-gray-600 z-20 hidden group-hover:block">
+                <div className="min-w-48  bg-stone-100 rounded flex flex-col gap-4 p-4">
+                  <p
+                    onClick={() => navigate("my-profile")}
+                    className="hover:text-black cursor-pointer"
+                  >
+                    My Profile
+                  </p>
+                  <p
+                    onClick={() => navigate("my-appointments")}
+                    className="hover:text-black cursor-pointer"
+                  >
+                    My Appointments
+                  </p>
+                  <p
+                    onClick={logout}
+                    className="hover:text-black cursor-pointer"
+                  >
+                    Logout
+                  </p>
+                </div>
               </div>
             </div>
-             </div>
-            
           </div>
         ) : (
           <button
