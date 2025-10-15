@@ -1,12 +1,12 @@
-import { useState, useEffect,useContext } from "react"; 
+import { useState, useEffect, useContext } from "react";
 import { AppContext } from "../context/AppContext";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import { FaGoogle } from "react-icons/fa";
 
-const Login = () => {  
-
-    const { backendUrl, token, setToken } = useContext(AppContext);
+const Login = () => {
+  const { backendUrl, token, setToken } = useContext(AppContext);
   const navigate = useNavigate();
 
   const [state, setState] = useState("Sign Up");
@@ -16,16 +16,16 @@ const Login = () => {
   const [name, setName] = useState("");
 
   const onSubmitHandler = async (event) => {
-    event.preventDefault();  
-       try {
+    event.preventDefault();
+    try {
       if (state === "Sign Up") {
         const { data } = await axios.post(backendUrl + "/api/user/register", {
           name,
           email,
           password,
         });
-        if (data.success) { 
-          toast.success("Account Created Successfully")
+        if (data.success) {
+          toast.success("Account Created Successfully");
           // localStorage.setItem("token", data.token);
           // setToken(data.token);
         } else {
@@ -37,7 +37,6 @@ const Login = () => {
           password,
         });
         if (data.success) {
-          
           localStorage.setItem("token", data.token);
           setToken(data.token);
         } else {
@@ -47,37 +46,32 @@ const Login = () => {
     } catch (error) {
       toast.error(error.message);
     }
-  }; 
+  };
 
-    useEffect(() => {
-    if (token) { 
-      console.log(token)
+  useEffect(() => {
+    if (token) {
+      console.log(token);
       navigate("/");
     }
-  }, [token]); 
-
+  }, [token]);
 
   const handleGoogleLogin = () => {
-  window.location.href = `${backendUrl}/api/user/google`;
-};
+    window.location.href = `${backendUrl}/api/user/google`;
+  };
 
   return (
     <form onSubmit={onSubmitHandler} className="min-h-[80vh] flex items-center">
       <div className="flex flex-col gap-3 m-auto items-center p-8 min-w-[340px] sm:min-w-96 border rounded-xl text-zinc-600 text-sm shadow-lg  ">
         <p className="text-2xl font-semibold">
           {state === "Sign Up" ? "Create Account" : "Login"}
-        </p> 
-         {/* 🔥 Google Login Button */}
+        </p>
+        {/* 🔥 Google Login Button */}
         <button
           type="button"
           onClick={handleGoogleLogin}
           className="border border-zinc-300 w-full py-2 rounded-md text-base flex items-center justify-center gap-2 hover:bg-gray-100 transition"
         >
-          <img
-            src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg"
-            alt="Google"
-            className="w-5 h-5"
-          />
+          <FaGoogle></FaGoogle>
           Sign in with Google
         </button>
 
@@ -85,19 +79,21 @@ const Login = () => {
           Please {state === "Sign Up" ? "Sign up" : "Log in"} to book
           appointment
         </p>
-        { state === 'Sign Up' &&  <div className="w-full">
-          <p>Full Name</p>
-          <input
-            className="border border-zinc-300 rounded w-full p-2 mt-1"
-            type="text"
-            onChange={(e) => {
-              setName(e.target.value);
-            }}
-            value={name}
-            required
-          />
-        </div>  }
-       
+        {state === "Sign Up" && (
+          <div className="w-full">
+            <p>Full Name</p>
+            <input
+              className="border border-zinc-300 rounded w-full p-2 mt-1"
+              type="text"
+              onChange={(e) => {
+                setName(e.target.value);
+              }}
+              value={name}
+              required
+            />
+          </div>
+        )}
+
         <div className="w-full">
           <p>Email</p>
           <input
@@ -122,13 +118,32 @@ const Login = () => {
             required
           />
         </div>
-        <button type="submit" className="bg-customPrimary text-white w-full py-2 rounded-md text-base">
+        <button
+          type="submit"
+          className="bg-customPrimary text-white w-full py-2 rounded-md text-base"
+        >
           {state === "Sign Up" ? "Create Account" : "Login"}
         </button>
         {state === "Sign Up" ? (
-          <p>Already have an account? <span  onClick={()=>setState('Login')} className="text-customPrimary underline cursor-pointer ">Login here</span> </p>
+          <p>
+            Already have an account?{" "}
+            <span
+              onClick={() => setState("Login")}
+              className="text-customPrimary underline cursor-pointer "
+            >
+              Login here
+            </span>{" "}
+          </p>
         ) : (
-          <p>Create an new account ? <span onClick={()=>setState('Sign Up')} className="text-customPrimary underline cursor-pointer ">click here</span></p>
+          <p>
+            Create an new account ?{" "}
+            <span
+              onClick={() => setState("Sign Up")}
+              className="text-customPrimary underline cursor-pointer "
+            >
+              click here
+            </span>
+          </p>
         )}
       </div>
     </form>

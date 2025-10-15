@@ -227,12 +227,30 @@ const appointmentComplete = async (req, res) => {
     const { appointmentId } = req.body; 
      const docId = req.docId ;
 
-    const appointmentData = await appointmentModel.findById(appointmentId);
+    const appointmentData = await appointmentModel.findById(appointmentId); 
+
+     if (!appointmentData) {
+      return res.json({ success: false, message: "Appointment not found" });
+    }
+
+    // validate ownership and verification status
+    if (appointmentData.docId !== docId) {
+      return res.json({ success: false, message: "Unauthorized action" });
+    }
+
+    if (!appointmentData.isVerified) {
+      return res.json({
+        success: false,
+        message: "Appointment not verified yet",
+      });
+    }
 
     if (appointmentData && appointmentData.docId === docId) {
       await appointmentModel.findByIdAndUpdate(appointmentId, {
         isCompleted: true,
       });
+
+      
       return res.json({ success: true, message: "Appointment Completed" });
     } else {
       return res.json({ success: false, message: "Mark Failed" });
@@ -318,6 +336,8 @@ const doctorProfile = async (req, res) => {
 const updateDoctorProfile = async (req, res) => {
   try {
     const { docId, fees, address, available } = req.body;
+
+    console.log(docId, fees, address, available)
 
     await doctorModel.findByIdAndUpdate(docId, { fees, address, available });
 

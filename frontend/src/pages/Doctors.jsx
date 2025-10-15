@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
+import { FaStar, FaStarHalfAlt, FaRegStar } from "react-icons/fa";
 
 const Doctors = () => {
   const { speciality } = useParams();
@@ -16,6 +17,19 @@ const Doctors = () => {
     } else {
       setFilterDoc(doctors);
     }
+  }; 
+
+   // helper: render stars based on averageRating
+  const renderStars = (rating) => {
+    const stars = [];
+    const fullStars = Math.floor(rating);
+    const halfStar = rating % 1 >= 0.5;
+
+    for (let i = 0; i < fullStars; i++) stars.push(<FaStar key={i} className="text-yellow-400" />);
+    if (halfStar) stars.push(<FaStarHalfAlt key="half" className="text-yellow-400" />);
+    while (stars.length < 5) stars.push(<FaRegStar key={`empty-${stars.length}`} className="text-gray-300" />);
+
+    return stars;
   };
 
   useEffect(() => {
@@ -107,7 +121,14 @@ const Doctors = () => {
                   <p>{item.available ? "Available" : "Not Available"}</p>
                 </div>
                 <p className="text-gray-500 text-lg font-medium">{item.name}</p>
-                <p className="text-gray-600 text-sm">{item.speciality}</p>
+                <p className="text-gray-600 text-sm">{item.speciality}</p> 
+                 <div className="flex items-center gap-2 mt-2">
+                  <div className="flex items-center">{renderStars(item.averageRating || 0)}</div>
+                  <span className="text-sm text-gray-500">
+                    ({item.totalReviews || 0} reviews)
+                  </span>
+                </div>
+              
               </div>
             </div>
           ))}
