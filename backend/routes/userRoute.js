@@ -1,29 +1,29 @@
 import express from "express";
 import passport from "passport";
-import { googleAuthCallback } from "../controllers/userController.js"
+import { googleAuthCallback } from "../controllers/userController.js";
 import {
   registerUser,
   loginUser,
-   getProfile,
-  updateProfile, 
+  getProfile,
+  updateProfile,
   bookAppointment,
-   listAppointment,
-   cancelAppointment,
-   paymentRazorpay,
-   verifyRazorpay,
-   getDoctorSuggestions,
-   addReview,
-   getUserNotifications,
-   markNotificationAsRead,
-} from "../controllers/userController.js"; 
+  listAppointment,
+  cancelAppointment,
+  paymentRazorpay,
+  verifyRazorpay,
+  getDoctorSuggestions,
+  addReview,
+  getUserNotifications,
+  markNotificationAsRead,
+} from "../controllers/userController.js";
 import authUser from "../middlewares/authUser.js";
 import upload from "../middlewares/multer.js";
 
-
-const userRouter = express.Router(); 
+const userRouter = express.Router();
 
 userRouter.post("/register", registerUser);
-userRouter.post("/login", loginUser); 
+userRouter.post("/login", loginUser);
+
 userRouter.get("/get-profile", authUser, getProfile);
 userRouter.post(
   "/update-profile",
@@ -31,21 +31,23 @@ userRouter.post(
   authUser,
   updateProfile
 );
-userRouter.post("/book-appointment", authUser, bookAppointment); 
-userRouter.get("/appointments", authUser, listAppointment);  
-userRouter.post("/cancel-appointment", authUser, cancelAppointment); 
-userRouter.post("/payment-razorpay", authUser, paymentRazorpay); 
-userRouter.post("/verify-razorpay", authUser, verifyRazorpay); 
-userRouter.post("/get-doctor-suggestions",authUser,getDoctorSuggestions); 
-userRouter.post("/add-review", authUser, addReview); 
-userRouter.get("/getUserNotifications",authUser,getUserNotifications)
+userRouter.post("/book-appointment", authUser, bookAppointment);
+userRouter.get("/appointments", authUser, listAppointment);
+userRouter.post("/cancel-appointment", authUser, cancelAppointment);
+userRouter.post("/payment-razorpay", authUser, paymentRazorpay);
+userRouter.post("/verify-razorpay", authUser, verifyRazorpay);
+userRouter.post("/get-doctor-suggestions", authUser, getDoctorSuggestions);
+userRouter.post("/add-review", authUser, addReview);
+userRouter.get("/getUserNotifications", authUser, getUserNotifications);
 userRouter.post("/markNotificationAsRead", authUser, markNotificationAsRead);
-
 
 // START Google OAuth — redirect to Google
 userRouter.get(
   "/google",
-  passport.authenticate("google", { scope: ["profile", "email"], session: false })
+  passport.authenticate("google", {
+    scope: ["profile", "email"],
+    session: false,
+  })
 );
 
 // Google OAuth callback
@@ -53,9 +55,6 @@ userRouter.get(
   "/google/callback",
   passport.authenticate("google", { session: false, failureRedirect: "/" }),
   googleAuthCallback
-); 
-
-
-
+);
 
 export default userRouter;

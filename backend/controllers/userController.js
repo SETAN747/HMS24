@@ -118,6 +118,7 @@ const loginUser = async (req, res) => {
 
     if (isMatch) {
       const token = generateToken(user._id);
+
       res.json({ success: true, token });
     } else {
       res.json({ success: false, message: "Invalid credentials" });
