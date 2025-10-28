@@ -7,6 +7,7 @@ import doctorModel from "../models/doctorModel.js";
 import appointmentModel from "../models/appointmentModel.js";
 import reviewModel from "../models/reviewModel.js";
 import notificationModel from "../models/notificationModel.js";
+import Counter from "../models/counter.js";
 import razorpayInstance from "../config/razorpay.js";
 import genAI from "../config/gemini.js";
 import { getIO } from "../config/socket.io.js";
@@ -19,6 +20,26 @@ const generateToken = (userId) => {
 function generate6DigitCode() {
   return Math.floor(100000 + Math.random() * 900000).toString(); // "123456"
 }
+
+const generateAppointmentToken = (docId, slotDate, seq) => {
+  // Example slotDate: "1_11_2025"  → DD_MM_YYYY format
+  const docShort = String(docId).slice(-4).toUpperCase();
+
+  // Split the date into parts
+  const [day, month, year] = slotDate.split("_");
+
+  // Convert into YYYYMMDD format for consistency in token
+  const ymd = `${year}${month.padStart(2, "0")}${day.padStart(2, "0")}`;
+
+  // Pad the sequence number to 3 digits
+  const padded = String(seq).padStart(3, "0");
+
+  // Final token format
+  return `APT-${docShort}-${ymd}-${padded}`;
+
+  // generateAppointmentToken("68b5adc82df4e258586013ba", "1_11_2025", 5);
+  // => "APT-13BA-20251101-005"
+};
 
 // API to register user
 const registerUser = async (req, res) => {
@@ -212,6 +233,17 @@ const bookAppointment = async (req, res) => {
 
     const verificationCode = generate6DigitCode();
 
+    // --- atomic sequence get/increment ---
+    const counterKey = `${docId}_${slotDate}`;
+    const counterDoc = await Counter.findOneAndUpdate(
+      { _id: counterKey },
+      { $inc: { seq: 1 } },
+      { new: true, upsert: true }
+    );
+    const seq = counterDoc.seq;
+
+    const appointmentToken = generateAppointmentToken(docId, slotDate, seq);
+
     const appointmentData = {
       userId,
       docId,
@@ -222,6 +254,8 @@ const bookAppointment = async (req, res) => {
       slotDate,
       date: Date.now(),
       verificationCode,
+      appointmentToken,
+      tokenSeq: seq,
     };
 
     const newAppointment = new appointmentModel(appointmentData);

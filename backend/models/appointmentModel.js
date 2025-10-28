@@ -1,6 +1,8 @@
 import mongoose from "mongoose";
 
 const appointmentSchema = new mongoose.Schema({
+  appointmentToken: { type: String, required: true, unique: true },
+  tokenSeq: { type: Number }, // sequence number for that doc+slotDate
   userId: { type: String, required: true },
   docId: { type: String, required: true },
   slotDate: { type: String, required: true },

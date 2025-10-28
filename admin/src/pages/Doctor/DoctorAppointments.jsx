@@ -4,7 +4,7 @@ import { AppContext } from "../../context/AppContext";
 import { assets } from "../../assets/assets";
 import axios from "axios";
 import { toast } from "react-toastify";
- import DoctorCall from "../../components/Doctor/DoctorCall";
+import DoctorCall from "../../components/Doctor/DoctorCall";
 
 const DoctorAppointments = () => {
   const {
@@ -92,13 +92,14 @@ const DoctorAppointments = () => {
 
         <div className="bg-white border rounded text-sm max-h-[80vh] min-h-[50vh] overflow-y-auto">
           {/* Table Header */}
-          <div className="max-sm:hidden grid grid-cols-[0.4fr_1.8fr_1fr_0.6fr_1.6fr_1.6fr_1fr_1.2fr] gap-1 py-3 px-6 border-b bg-gray-50 font-medium text-gray-600">
+          <div className="max-sm:hidden grid grid-cols-[0.35fr_1.6fr_1fr_0.6fr_1.4fr_1.4fr_1fr_1fr_1.2fr] gap-1 py-3 px-6 border-b bg-gray-50 font-medium text-gray-600">
             <p>#</p>
             <p>Patient</p>
-            <p>Payment</p>
+            <p>Payment Mode</p>
             <p>Age</p>
             <p>Date & Time</p>
             <p>Verify</p>
+            <p>Payment Status</p>
             <p>Fees</p>
             <p>Action</p>
           </div>
@@ -110,7 +111,7 @@ const DoctorAppointments = () => {
             .map((item, index) => (
               <div
                 key={item._id}
-                className="sm:grid grid-cols-[0.4fr_1.8fr_1fr_0.6fr_1.6fr_1.6fr_1fr_1.2fr] gap-1 items-center text-gray-600 py-3 px-6 border-b hover:bg-gray-50 max-sm:flex max-sm:flex-col max-sm:gap-4"
+                className="sm:grid grid-cols-[0.35fr_1.6fr_1fr_0.6fr_1.4fr_1.4fr_1fr_1fr_1.2fr] gap-1 items-center text-gray-600 py-3 px-6 border-b hover:bg-gray-50 max-sm:flex max-sm:flex-col max-sm:gap-4"
               >
                 {/* Index */}
                 <p className="max-sm:hidden">{index + 1}</p>
@@ -234,6 +235,19 @@ const DoctorAppointments = () => {
                   )}
                 </div>
 
+                {/* Payment Status (NEW) */}
+                <div>
+                  {item.payment ? (
+                    <span className="inline-block px-3 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full">
+                      Paid
+                    </span>
+                  ) : (
+                    <span className="inline-block px-3 py-1 text-xs font-medium text-red-700 bg-red-100 rounded-full">
+                      Pending
+                    </span>
+                  )}
+                </div>
+
                 {/* Fees */}
                 <p>
                   {currency}
@@ -276,7 +290,7 @@ const DoctorAppointments = () => {
       {callingPatient && (
         <DoctorCall
           patient={callingPatient.userData}
-          doctor={callingPatient.docData }
+          doctor={callingPatient.docData}
           onClose={() => setCallingPatient(null)}
         />
       )}
