@@ -85,20 +85,20 @@ const DoctorAppointments = () => {
 
   return (
     <>
-      {" "}
-      (
+      
+      
       <div className="w-full max-w-6xl m-5">
         <p className="mb-3 text-lg font-medium">All Appointments</p>
 
         <div className="bg-white border rounded text-sm max-h-[80vh] min-h-[50vh] overflow-y-auto">
           {/* Table Header */}
-          <div className="max-sm:hidden grid grid-cols-[0.35fr_1.6fr_1fr_0.6fr_1.4fr_1.4fr_1fr_1fr_1.2fr] gap-1 py-3 px-6 border-b bg-gray-50 font-medium text-gray-600">
-            <p>#</p>
+          <div className="max-sm:hidden grid grid-cols-[0.9fr_1.6fr_1fr_0.6fr_1.4fr_1.4fr_1fr_1fr_1.2fr] gap-1 py-3 px-6 border-b bg-gray-50 font-medium text-gray-600">
+            <p>Appointment Token</p>
             <p>Patient</p>
             <p>Payment Mode</p>
             <p>Age</p>
             <p>Date & Time</p>
-            <p>Verify</p>
+            <p>Verify Appointment</p>
             <p>Payment Status</p>
             <p>Fees</p>
             <p>Action</p>
@@ -110,11 +110,11 @@ const DoctorAppointments = () => {
             .reverse()
             .map((item, index) => (
               <div
-                key={item._id}
-                className="sm:grid grid-cols-[0.35fr_1.6fr_1fr_0.6fr_1.4fr_1.4fr_1fr_1fr_1.2fr] gap-1 items-center text-gray-600 py-3 px-6 border-b hover:bg-gray-50 max-sm:flex max-sm:flex-col max-sm:gap-4"
+                key={item.appointmentToken}
+                className="sm:grid grid-cols-[0.9fr_1.6fr_1fr_0.6fr_1.4fr_1.4fr_1fr_1fr_1.2fr] gap-1 items-center text-gray-600 py-3 px-6 border-b hover:bg-gray-50 max-sm:flex max-sm:flex-col max-sm:gap-4"
               >
                 {/* Index */}
-                <p className="max-sm:hidden">{index + 1}</p>
+                <p className="max-sm:hidden">{item.appointmentToken}</p>
 
                 {/* Patient */}
                 <div className="flex items-center gap-2">
@@ -189,7 +189,7 @@ const DoctorAppointments = () => {
                     </div>
                   )}
 
-                  {rescheduleId === item._id ? (
+                  {/* {rescheduleId === item._id ? (
                     <div className="flex items-center gap-2">
                       <input
                         type="date"
@@ -232,7 +232,7 @@ const DoctorAppointments = () => {
                     >
                       Reschedule
                     </button>
-                  )}
+                  )} */}
                 </div>
 
                 {/* Payment Status (NEW) */}
@@ -294,7 +294,7 @@ const DoctorAppointments = () => {
           onClose={() => setCallingPatient(null)}
         />
       )}
-      );
+      
     </>
   );
 };
