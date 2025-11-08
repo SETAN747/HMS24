@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
 import { assets } from "../assets/assets";
 import RelatedDoctors from "../components/RelatedDoctors";
+import AppointmentFormModal from "../components/Forms/AppointmentFormModal";
 import { toast } from "react-toastify";
 import axios from "axios";
 
@@ -16,18 +17,20 @@ const Appointment = () => {
 
   const [docInfo, setDocInfo] = useState(null);
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const fetchDocInfo = async () => {
     const docInfo = doctors.find((doc) => doc._id === docId);
     setDocInfo(docInfo);
     console.log(docInfo);
   };
 
-  const bookAppointment = async () => {
+  const bookAppointment = async (formData) => {
     if (!token) {
       toast.warn("Login to book appointment");
       return navigate("/login");
     }
-
+    console.log("🧾 Patient Details:", formData);
     try {
       const date = docSlots[slotIndex][0].datetime;
 
@@ -39,7 +42,7 @@ const Appointment = () => {
 
       const { data } = await axios.post(
         backendUrl + "/api/user/book-appointment",
-        { docId, slotDate, slotTime },
+        { docId, slotDate, slotTime, patientDetails: formData },
         { headers: { token } }
       );
       if (data.success) {
@@ -143,18 +146,22 @@ const Appointment = () => {
 
   useEffect(() => {
     console.log(docSlots);
-  }, [docSlots]); 
+  }, [docSlots]);
 
   useEffect(() => {
-  if (docSlots.length && docSlots[slotIndex] && docSlots[slotIndex].length > 0) {
-    // Automatically set first available time for selected date
-    setSlotTime(docSlots[slotIndex][0].time); 
-   
-  } else {
-    setSlotTime(""); // reset if no slots
-  }
-}, [slotIndex, docSlots]);
+    if (
+      docSlots.length &&
+      docSlots[slotIndex] &&
+      docSlots[slotIndex].length > 0
+    ) {
+      // Automatically set first available time for selected date
+      setSlotTime(docSlots[slotIndex][0].time);
+    } else {
+      setSlotTime(""); // reset if no slots
+    }
+  }, [slotIndex, docSlots]);
 
+  
 
   return (
     docInfo && (
@@ -241,11 +248,17 @@ const Appointment = () => {
               ))} */}
           </div>
           <button
-            onClick={bookAppointment}
+            onClick={() => setIsModalOpen(true)}
             className="bg-customPrimary text-white text-sm font-light px-14 py-3 rounded-full my-6 "
           >
             Book an appointment{" "}
           </button>
+
+          <AppointmentFormModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onSubmit={bookAppointment}
+          />
         </div>
 
         {/* Listing Related Doctors */}

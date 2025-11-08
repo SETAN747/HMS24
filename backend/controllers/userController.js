@@ -204,7 +204,7 @@ const updateProfile = async (req, res) => {
 // API to book appointment
 const bookAppointment = async (req, res) => {
   try {
-    const { docId, slotDate, slotTime } = req.body;
+    const { docId, slotDate, slotTime ,patientDetails } = req.body;
     const userId = req.user.userId; // token se mila hua
 
     const docData = await doctorModel.findById(docId).select("-password");
@@ -252,6 +252,7 @@ const bookAppointment = async (req, res) => {
       amount: docData.fees,
       slotTime,
       slotDate,
+      patientDetails,
       date: Date.now(),
       verificationCode,
       appointmentToken,
