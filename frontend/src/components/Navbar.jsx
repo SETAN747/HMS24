@@ -149,7 +149,7 @@ const Navbar = () => {
 
                           {/* Message */}
                           <p className="text-sm text-gray-600 mt-1">
-                            {n.message}
+                            {n.message.patient}
                           </p>
 
                           {/* Time */}

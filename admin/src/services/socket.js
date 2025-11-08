@@ -2,7 +2,7 @@ import { io } from "socket.io-client";
 
 let socket;
 
-const getSocket = () => {
+export const getSocket = () => {
   if (!socket) {
     socket = io(import.meta.env.VITE_BACKEND_URL);
     // 🔎 Debug connection events

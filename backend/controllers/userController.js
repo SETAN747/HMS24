@@ -265,18 +265,25 @@ const bookAppointment = async (req, res) => {
     await doctorModel.findByIdAndUpdate(docId, { slots_booked });
 
     // Notification DB me save
-    const notificationMessage = `Your appointment with ${appointmentData.docData.name} (${appointmentData.docData.speciality}) has been successfully booked for ${appointmentData.slotDate} at ${appointmentData.slotTime}. Consultation Fee: ₹${appointmentData.amount}.`;
+    const patientNotificationMessage = `Your appointment with ${appointmentData.docData.name} (${appointmentData.docData.speciality}) has been successfully booked for ${appointmentData.slotDate} at ${appointmentData.slotTime}. Consultation Fee: ₹${appointmentData.amount}.`;
+
+    const doctorNotificationMessage = `Your appointment with Patient ${appointmentData.userData.name} has been successfully booked for ${appointmentData.slotDate} at ${appointmentData.slotTime}. Consultation Fee: ₹${appointmentData.amount}.`;
 
     const notification = await notificationModel.create({
       userId: appointmentData.userId,
+      docId,
       title: "Appointment Confirmed ✅",
-      message: notificationMessage,
+      message: {
+        patient: patientNotificationMessage,
+        doctor: doctorNotificationMessage,
+      },
       link: "/my-appointments",
     });
 
     // Real-time emit
     const io = getIO();
     io.to(appointmentData.userId).emit("new-notification", notification);
+    io.to(appointmentData.docId).emit("new-notification", notification);
 
     res.json({ success: true, message: "Appointment Booked" });
   } catch (error) {

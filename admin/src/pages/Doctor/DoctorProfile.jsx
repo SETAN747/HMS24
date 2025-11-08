@@ -13,7 +13,7 @@ const DoctorProfile = () => {
 
   const updateProfile = async () => {
     try {
-      const updateData = {
+      const updateData = { 
         address: profileData.address,
         fees: profileData.fees,
         available: profileData.available,

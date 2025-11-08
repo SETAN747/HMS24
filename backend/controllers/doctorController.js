@@ -2,6 +2,7 @@ import doctorModel from "../models/doctorModel.js";
 import bycrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import appointmentModel from "../models/appointmentModel.js"; 
+import notificationModel from "../models/notificationModel.js";
 
 
 function generate6DigitCode() {
@@ -284,40 +285,118 @@ const appointmentCancel = async (req, res) => {
 };
 
 // API to get dashboard data for doctor panel
-const doctorDashboard = async (req, res) => {
-  try {
-    // const { docId } = req.body;
+ const doctorDashboard = async (req, res) => {
+  try { 
+    const docId = req.docId
     const appointments = await appointmentModel.find({ docId: req.docId });
 
-    let earnings = 0;
+    let totalEarnings = 0;
+    let todayEarnings = 0;
+    let totalPatients = new Set();
+    let todayPatients = new Set();
+    let todayAppointments = 0;
 
-    appointments.map((item) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    // -------------------------
+    // WEEKLY DATA PREPARATION
+    // -------------------------
+    const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const weeklyCounts = Array(7).fill(0);
+
+    // Last week range for comparison
+    const lastWeekStart = new Date(today);
+    lastWeekStart.setDate(today.getDate() - 7);
+    lastWeekStart.setHours(0, 0, 0, 0);
+    const lastWeekEnd = new Date(today);
+    lastWeekEnd.setHours(0, 0, 0, 0);
+
+    let lastWeekAppointments = 0;
+    let lastWeekEarnings = 0;
+
+    appointments.forEach((item) => {
+      // ✅ Convert slotDate ("8_11_2025") into proper Date
+      let appointmentDate;
+      if (item.slotDate && item.slotDate.includes("_")) {
+        const [day, month, year] = item.slotDate.split("_").map(Number);
+        appointmentDate = new Date(year, month - 1, day);
+      } else {
+        appointmentDate = new Date(item.slotDateISO || item.slotDate);
+      }
+      appointmentDate.setHours(0, 0, 0, 0);
+
+      // Total earnings
       if (item.isCompleted || item.payment) {
-        earnings += item.amount;
+        totalEarnings += item.amount || 0;
+      }
+
+      totalPatients.add(item.userId?.toString());
+
+      // Today's data
+      if (appointmentDate >= today && appointmentDate < tomorrow) {
+        todayAppointments++;
+        todayPatients.add(item.userId?.toString());
+        if (item.isCompleted || item.payment) {
+          todayEarnings += item.amount || 0;
+        }
+      }
+
+      // Weekly chart (this week)
+      const dayIndex = appointmentDate.getDay();
+      weeklyCounts[dayIndex] += 1;
+
+      // Last week data
+      if (appointmentDate >= lastWeekStart && appointmentDate < lastWeekEnd) {
+        lastWeekAppointments++;
+        if (item.isCompleted || item.payment) {
+          lastWeekEarnings += item.amount || 0;
+        }
       }
     });
 
-    let patients = [];
+    // 📊 Comparison percent (today vs last week same day)
+    const compareToLastWeek =
+      lastWeekAppointments > 0
+        ? ((todayAppointments - lastWeekAppointments) / lastWeekAppointments) * 100
+        : todayAppointments > 0
+        ? 100
+        : 0; 
 
-    appointments.map((item) => {
-      if (!patients.includes(item.userId)) {
-        patients.push(item.userId);
-      }
-    });
+         const notifications = await notificationModel
+              .find({ docId })
+              .sort({ createdAt: -1 });
 
     const dashData = {
-      earnings,
-      appointments: appointments.length,
-      patients: patients.length,
+      total: {
+        earnings: totalEarnings,
+        appointments: appointments.length,
+        patients: totalPatients.size,
+      },
+      today: {
+        earnings: todayEarnings,
+        appointments: todayAppointments,
+        patients: todayPatients.size,
+        compareToLastWeek: Number(compareToLastWeek.toFixed(1)),
+      },
+      weekly: {
+        labels: weekDays,
+        values: weeklyCounts,
+      },
       latestAppointments: appointments.reverse().slice(0, 5),
+      notifications,
     };
 
     res.json({ success: true, dashData });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     res.json({ success: false, message: error.message });
   }
 };
+
+
 
 // API to get doctor profile for Doctor panel
 const doctorProfile = async (req, res) => {
@@ -335,9 +414,11 @@ const doctorProfile = async (req, res) => {
 // API to update doctor profile data from Doctor panel
 const updateDoctorProfile = async (req, res) => {
   try {
-    const { docId, fees, address, available } = req.body;
+    const {  fees, address, available } = req.body;
+    const docId = req.docId ;
+    console.log(docId, fees, address, available) 
 
-    console.log(docId, fees, address, available)
+    if (!docId) return res.json({ success: false, message: "Doctor ID missing" });
 
     await doctorModel.findByIdAndUpdate(docId, { fees, address, available });
 
