@@ -11,6 +11,9 @@ import Counter from "../models/counter.js";
 import razorpayInstance from "../config/razorpay.js";
 import genAI from "../config/gemini.js";
 import { getIO } from "../config/socket.io.js";
+import SignupOtp from "../models/SignupOtp.js";
+import { sendMail } from "../config/mailer.js";
+
 
 // ✅ Helper: Generate JWT Token
 const generateToken = (userId) => {
@@ -40,11 +43,84 @@ const generateAppointmentToken = (docId, slotDate, seq) => {
   // generateAppointmentToken("68b5adc82df4e258586013ba", "1_11_2025", 5);
   // => "APT-13BA-20251101-005"
 };
+  
+ // API For Sending OTP
+ const signupRequest = async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    if (!name || !email || !password) return res.json({ success: false, message: "Missing details" });
+    if (!validator.isEmail(email)) return res.json({ success: false, message: "Enter valid email" });
+    if (password.length < 8) return res.json({ success: false, message: "Password must be ≥ 8 chars" });
+
+    // check user exists
+    const exist = await userModel.findOne({ email });
+    if (exist) return res.json({ success: false, message: "Email already registered" });
+
+    // hash password now and store in temp record
+    const salt = await bycrypt.genSalt(10);
+    const passwordHash = await bycrypt.hash(password, salt);
+
+    // generate OTP (6-digit)
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    // upsert temp record
+    await SignupOtp.findOneAndUpdate(
+      { email },
+      { name, passwordHash, otp, expiresAt, attempts: 0 },
+      { upsert: true, new: true }
+    );
+
+    // send email
+    const html = `
+      <p>Hi ${name},</p>
+      <p>Your verification code is: <strong>${otp}</strong></p>
+      <p>Code valid for 15 minutes.</p>
+    `;
+    await sendMail({ to: email, from: process.env.SMTP_USER, subject: "Verify your email", html });
+
+    return res.json({ success: true, message: "OTP sent to email" });
+  } catch (err) {
+    console.error(err);
+    return res.json({ success: false, message: err.message });
+  }
+}; 
+
+// API for Resending Signup OTP
+const resendSignupOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.json({ success: false, message: "Email required" });
+
+    const record = await SignupOtp.findOne({ email });
+    if (!record) return res.json({ success: false, message: "No signup request found" });
+
+    // optional: limit resend attempts
+    if (record.resendCount >= 5) return res.json({ success: false, message: "Resend limit reached" });
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    record.otp = otp;
+    record.expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    record.resendCount = (record.resendCount || 0) + 1;
+    record.attempts = 0;
+    await record.save();
+
+    await sendMail({ to: email, from: process.env.MAIL_FROM, subject: "Your verification code (resend)", html: `<p>Your code: <strong>${otp}</strong></p>` });
+
+    return res.json({ success: true, message: "OTP resent" });
+  } catch (err) {
+    console.error(err);
+    return res.json({ success: false, message: err.message });
+  }
+};
 
 // API to register user
 const registerUser = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password } = req.tempSignup; 
+    console.log("name at registerUser:",name)
+    console.log("email at registerUser:",email)
+    console.log("password at registerUser:",password)
 
     if (!name || !email || !password) {
       return res.json({ success: false, message: "Missing Details" });
@@ -56,24 +132,24 @@ const registerUser = async (req, res) => {
     }
 
     // validating strong password
-    if (password.length < 8) {
-      return res.json({ success: false, message: "enter a strong password" });
-    }
+    // if (password.length < 8) {
+    //   return res.json({ success: false, message: "enter a strong password" });
+    // }
 
     // Check if user already exists
-    const existingUser = await userModel.findOne({ email });
-    if (existingUser) {
-      return res.json({ success: false, message: "Email already registered" });
-    }
+    // const existingUser = await userModel.findOne({ email });
+    // if (existingUser) {
+    //   return res.json({ success: false, message: "Email already registered" });
+    // }
 
     // hashing user password
-    const salt = await bycrypt.genSalt(10);
-    const hashedPassword = await bycrypt.hash(password, salt);
+    // const salt = await bycrypt.genSalt(10);
+    // const hashedPassword = await bycrypt.hash(password, salt);
 
     const userData = {
       name,
       email,
-      password: hashedPassword,
+      password,
       authProvider: "local",
     };
 
@@ -659,6 +735,8 @@ const markNotificationAsRead = async (req, res) => {
 };
 
 export {
+  signupRequest,
+  resendSignupOtp,
   registerUser,
   loginUser,
   getProfile,
@@ -673,4 +751,5 @@ export {
   addReview,
   getUserNotifications,
   markNotificationAsRead,
+  
 };

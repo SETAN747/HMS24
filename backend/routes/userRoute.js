@@ -1,7 +1,8 @@
 import express from "express";
 import passport from "passport";
 import { googleAuthCallback } from "../controllers/userController.js";
-import {
+import { signupRequest,
+  resendSignupOtp,
   registerUser,
   loginUser,
   getProfile,
@@ -17,11 +18,14 @@ import {
   markNotificationAsRead,
 } from "../controllers/userController.js";
 import authUser from "../middlewares/authUser.js";
+import verifyOtpMiddleware from "../middlewares/verifyOtpMiddleware.js";
 import upload from "../middlewares/multer.js";
 
 const userRouter = express.Router();
 
-userRouter.post("/register", registerUser);
+userRouter.post("/register", signupRequest);
+userRouter.post("/register/verify-otp",verifyOtpMiddleware,registerUser);
+userRouter.post("/register/resend-otp", resendSignupOtp);
 userRouter.post("/login", loginUser);
 
 userRouter.get("/get-profile", authUser, getProfile);
@@ -46,6 +50,7 @@ userRouter.get(
   "/google",
   passport.authenticate("google", {
     scope: ["profile", "email"],
+    prompt: "select_account",
     session: false,
   })
 );

@@ -3,150 +3,104 @@ import { AppContext } from "../context/AppContext";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import { FaGoogle } from "react-icons/fa";
+
+import LoginForm from "../components/Auth/LoginForm";
+import SignupForm from "../components/Auth/SignupForm";
+import OtpModal from "../components/Auth/OtpModal";
 
 const Login = () => {
   const { backendUrl, token, setToken } = useContext(AppContext);
   const navigate = useNavigate();
 
-  const [state, setState] = useState("Sign Up");
-
+  const [mode, setMode] = useState("login"); // "login" | "signup"
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
 
-  const onSubmitHandler = async (event) => {
-    event.preventDefault();
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState("");
+
+  const handleGoogleLogin = () => {
+    window.location.href = `${backendUrl}/api/user/google`;
+  };
+
+  const onSubmitHandler = async (e) => {
+    e.preventDefault();
     try {
-      if (state === "Sign Up") {
-        const { data } = await axios.post(backendUrl + "/api/user/register", {
+      if (mode === "signup") { 
+        
+        const { data } = await axios.post(`${backendUrl}/api/user/register`, {
           name,
           email,
           password,
-        });
+        }); 
+        
         if (data.success) {
-          toast.success("Account Created Successfully");
-          // localStorage.setItem("token", data.token);
-          // setToken(data.token);
-        } else {
-          toast.error(data.message);
-        }
+          // toast.success("Account created successfully");
+          // setMode("login");
+          toast.success("OTP sent to your email");
+          setPendingEmail(email);
+          setShowOtpModal(true);
+        } else toast.error(data.message);
       } else {
-        const { data } = await axios.post(backendUrl + "/api/user/login", {
+        const { data } = await axios.post(`${backendUrl}/api/user/login`, {
           email,
           password,
         });
         if (data.success) {
           localStorage.setItem("token", data.token);
           setToken(data.token);
-        } else {
-          toast.error(data.message);
-        }
+        } else toast.error(data.message);
       }
-    } catch (error) {
-      toast.error(error.message);
+    } catch (err) {
+      toast.error(err.message);
     }
   };
 
   useEffect(() => {
-    if (token) {
-      console.log(token);
-      navigate("/");
-    }
+    if (token) navigate("/");
   }, [token]);
 
-  const handleGoogleLogin = () => {
-    window.location.href = `${backendUrl}/api/user/google`;
-  };
-
   return (
-    <form onSubmit={onSubmitHandler} className="min-h-[80vh] flex items-center">
-      <div className="flex flex-col gap-3 m-auto items-center p-8 min-w-[340px] sm:min-w-96 border rounded-xl text-zinc-600 text-sm shadow-lg  ">
-        <p className="text-2xl font-semibold">
-          {state === "Sign Up" ? "Create Account" : "Login"}
-        </p>
-        {/* 🔥 Google Login Button */}
-        <button
-          type="button"
-          onClick={handleGoogleLogin}
-          className="border border-zinc-300 w-full py-2 rounded-md text-base flex items-center justify-center gap-2 hover:bg-gray-100 transition"
-        >
-          <FaGoogle></FaGoogle>
-          Sign in with Google
-        </button>
-
-        <p>
-          Please {state === "Sign Up" ? "Sign up" : "Log in"} to book
-          appointment
-        </p>
-        {state === "Sign Up" && (
-          <div className="w-full">
-            <p>Full Name</p>
-            <input
-              className="border border-zinc-300 rounded w-full p-2 mt-1"
-              type="text"
-              onChange={(e) => {
-                setName(e.target.value);
-              }}
-              value={name}
-              required
-            />
-          </div>
-        )}
-
-        <div className="w-full">
-          <p>Email</p>
-          <input
-            className="border border-zinc-300 rounded w-full p-2 mt-1"
-            type="email"
-            onChange={(e) => {
-              setEmail(e.target.value);
-            }}
-            value={email}
-            required
-          />
-        </div>
-        <div className="w-full">
-          <p>Password</p>
-          <input
-            className="border border-zinc-300 rounded w-full p-2 mt-1"
-            type="password"
-            onChange={(e) => {
-              setPassword(e.target.value);
-            }}
-            value={password}
-            required
-          />
-        </div>
-        <button
-          type="submit"
-          className="bg-customPrimary text-white w-full py-2 rounded-md text-base"
-        >
-          {state === "Sign Up" ? "Create Account" : "Login"}
-        </button>
-        {state === "Sign Up" ? (
-          <p>
-            Already have an account?{" "}
-            <span
-              onClick={() => setState("Login")}
-              className="text-customPrimary underline cursor-pointer "
-            >
-              Login here
-            </span>{" "}
-          </p>
-        ) : (
-          <p>
-            Create an new account ?{" "}
-            <span
-              onClick={() => setState("Sign Up")}
-              className="text-customPrimary underline cursor-pointer "
-            >
-              click here
-            </span>
-          </p>
-        )}
-      </div>
-    </form>
+    <>
+      {" "}
+      {mode === "signup" ? (
+        <SignupForm
+          name={name}
+          email={email}
+          password={password}
+          setName={setName}
+          setEmail={setEmail}
+          setPassword={setPassword}
+          onSubmit={onSubmitHandler}
+          onSwitchToLogin={() => setMode("login")}
+          handleGoogleLogin={handleGoogleLogin}
+        />
+      ) : (
+        <LoginForm
+          email={email}
+          password={password}
+          setEmail={setEmail}
+          setPassword={setPassword}
+          onSubmit={onSubmitHandler}
+          onSwitchToSignup={() => setMode("signup")}
+          handleGoogleLogin={handleGoogleLogin}
+        />
+      )}
+      ; 
+      {showOtpModal && (
+        <OtpModal
+          email={pendingEmail}
+          backendUrl={backendUrl}
+          onClose={() => setShowOtpModal(false)}
+          onVerified={(token) => {
+            setToken(token); // store token in context
+            setShowOtpModal(false);
+            navigate("/"); // redirect after verification
+          }}
+        />
+      )}
+    </>
   );
 };
 
