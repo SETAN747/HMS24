@@ -11,7 +11,8 @@ import cookieParser from "cookie-parser";
 import passport from "passport";
 import "./config/passport.js";
 import { createServer } from "http";   // ✅ import http
-import { initSocket } from "./config/socket.io.js";  // ✅ import socket.io config
+import { initSocket } from "./config/socket.io.js";  // ✅ import socket.io config 
+import { globalLimiter } from './middlewares/globalLimiter.js';
 
 
 //app config
@@ -35,7 +36,7 @@ app.use(cors({
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
 }))
-
+app.use(globalLimiter);
 
 //api endpoints  
 
