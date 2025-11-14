@@ -5,6 +5,7 @@ import { signupRequest,
   resendSignupOtp,
   registerUser,
   loginUser,
+  logoutUser,
   getProfile,
   updateProfile,
   bookAppointment,
@@ -17,6 +18,7 @@ import { signupRequest,
   getUserNotifications,
   markNotificationAsRead,
 } from "../controllers/userController.js";
+import { doctorList } from "../controllers/doctorController.js";
 import authUser from "../middlewares/authUser.js";
 import verifyOtpMiddleware from "../middlewares/verifyOtpMiddleware.js";
 import upload from "../middlewares/multer.js";
@@ -26,7 +28,8 @@ const userRouter = express.Router();
 userRouter.post("/register", signupRequest);
 userRouter.post("/register/verify-otp",verifyOtpMiddleware,registerUser);
 userRouter.post("/register/resend-otp", resendSignupOtp);
-userRouter.post("/login", loginUser);
+userRouter.post("/login", loginUser); 
+userRouter.post("/logout", logoutUser);
 
 userRouter.get("/get-profile", authUser, getProfile);
 userRouter.post(
@@ -37,6 +40,7 @@ userRouter.post(
 );
 userRouter.post("/book-appointment", authUser, bookAppointment);
 userRouter.get("/appointments", authUser, listAppointment);
+userRouter.get("/doctor-list", authUser, doctorList);
 userRouter.post("/cancel-appointment", authUser, cancelAppointment);
 userRouter.post("/payment-razorpay", authUser, paymentRazorpay);
 userRouter.post("/verify-razorpay", authUser, verifyRazorpay);

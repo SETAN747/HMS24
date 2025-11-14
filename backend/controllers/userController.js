@@ -158,7 +158,13 @@ const registerUser = async (req, res) => {
 
     const token = generateToken(user._id);
 
-    res.json({ success: true, token });
+    // res.json({ success: true, token }); 
+    res.cookie("token", token, {
+  httpOnly: true,
+  secure: true,        // https only (production)
+  sameSite: "none",    // cross-site requests allowed
+  maxAge: 7 * 24 * 60 * 60 * 1000
+});
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });
@@ -216,7 +222,18 @@ const loginUser = async (req, res) => {
     if (isMatch) {
       const token = generateToken(user._id);
 
-      res.json({ success: true, token });
+      
+      res.cookie("token", token, {
+  httpOnly: true,
+  secure: true,        // https only (production)
+  sameSite: "none",    // cross-site requests allowed
+  maxAge: 7 * 24 * 60 * 60 * 1000
+}); 
+
+ res.json({ success: true,  token: {
+    name: user.name,
+    email: user.email,
+  } }); 
     } else {
       res.json({ success: false, message: "Invalid credentials" });
     }
@@ -224,7 +241,18 @@ const loginUser = async (req, res) => {
     console.log(error);
     res.json({ success: false, message: error.message });
   }
+}; 
+
+ const logoutUser = async (req, res) => {
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+  });
+
+  return res.json({ success: true, message: "Logged out successfully" });
 };
+
 
 // API to get user profile data
 const getProfile = async (req, res) => {
@@ -739,6 +767,7 @@ export {
   resendSignupOtp,
   registerUser,
   loginUser,
+  logoutUser,
   getProfile,
   updateProfile,
   bookAppointment,

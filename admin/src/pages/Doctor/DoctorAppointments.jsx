@@ -277,7 +277,7 @@ const DoctorAppointments = () => {
                     />
                     <button
                       onClick={() => setCallingPatient(item)} // 👈 naya state call ke liye
-                      className="px-2 py-1 text-sm border rounded bg-green-50 hover:bg-green-100"
+                      className="bg-primary text-white text-sm px-5 py-1 rounded-full"
                     >
                       Call
                     </button>

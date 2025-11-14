@@ -3,7 +3,8 @@ import jwt from "jsonwebtoken";
 // user authentication middleware
 const authUser = async (req, res, next) => {
   try {
-    const { token } = req.headers;
+    // const { token } = req.headers; 
+    const token = req.cookies.token; 
     if (!token) {
       return res.json({
         success: false,

@@ -28,7 +28,7 @@ const AppContextProvider = (props) => {
 
   const getDoctorsData = async () => {
     try {
-      const { data } = await axios.get(backendUrl + "/api/doctor/list");
+      const { data } = await axios.get(backendUrl + "/api/user/doctor-list");
       if (data.success) {
         setDoctors(data.doctors);
       } else {
@@ -42,9 +42,7 @@ const AppContextProvider = (props) => {
 
   const loadUserProfileData = async () => {
     try {
-      const { data } = await axios.get(backendUrl + "/api/user/get-profile", {
-        headers: { token },
-      });
+      const { data } = await axios.get(backendUrl + "/api/user/get-profile",);
       if (data.success) {
         setUserData(data.user);
         console.log("data.user", data.user);
@@ -57,13 +55,29 @@ const AppContextProvider = (props) => {
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem("token"); // ✅ Clear token from localStorage
-    setToken(""); // ✅ Reset state
-    setUserData({});
-    navigate("/login"); // ✅ Reset user data
-    toast.success("Logged out successfully");
-  };
+  // const logout = () => {
+  //   localStorage.removeItem("token"); // ✅ Clear token from localStorage
+  //   setToken(""); // ✅ Reset state
+  //   setUserData({});
+  //   navigate("/login"); // ✅ Reset user data
+  //   toast.success("Logged out successfully");
+  // }; 
+
+  const logout = async () => {
+  try {
+    await axios.post(`${backendUrl}/api/user/logout`,);
+
+    setUserData(null);
+    setToken(null);
+
+    localStorage.removeItem("token"); // if any fallback 
+     navigate("/login");
+     toast.success("Logged out successfully");
+  } catch (err) {
+    console.error(err);
+  }
+};
+
 
   const value = {
     doctors,
