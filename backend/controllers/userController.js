@@ -164,7 +164,12 @@ const registerUser = async (req, res) => {
   secure: true,        // https only (production)
   sameSite: "none",    // cross-site requests allowed
   maxAge: 7 * 24 * 60 * 60 * 1000
-});
+}); 
+   
+res.json({ success: true,  token: {
+    name: user.name,
+    email: user.email,
+  } }); 
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });
@@ -181,7 +186,14 @@ const googleAuthCallback = async (req, res) => {
     }
 
     // JWT create
-    const token = generateToken(user._id);
+    const token = generateToken(user._id); 
+
+     res.cookie("token", token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
 
     // Frontend ke liye redirect URL banaye
     const url = new URL(process.env.FRONTEND_URL);
