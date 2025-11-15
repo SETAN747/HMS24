@@ -23,6 +23,8 @@ const Login = () => {
         });
         if (data.success) {
           localStorage.setItem("aToken", data.token);
+          setDToken("");
+          localStorage.removeItem("dToken");
           setAToken(data.token);
         } else {
           toast.error(data.message);
@@ -33,10 +35,11 @@ const Login = () => {
           password,
         });
         if (data.success) {
-          localStorage.setItem("dToken", data.token);
+          localStorage.setItem("dToken", data.token); 
+           setAToken("");
+          localStorage.removeItem("aToken");
           setDToken(data.token);
           console.log(data.token);
-          
         } else {
           toast.error(data.message);
         }

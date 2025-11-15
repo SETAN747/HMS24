@@ -8,10 +8,13 @@ import DoctorContextProvider from "./context/DoctorContext.jsx";
 import AppContextProvider from "./context/AppContext.jsx";
 import { Buffer } from "buffer";
 import process from "process";
+import axios from "axios";
 
 window.Buffer = Buffer;
 window.process = process;
-window.global = window;
+window.global = window; 
+
+axios.defaults.withCredentials = true;
 
 createRoot(document.getElementById("root")).render(
   <BrowserRouter>

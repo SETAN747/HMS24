@@ -2,7 +2,7 @@ import bcrypt from "bcryptjs";
 import validator from "validator";
 import { v2 as cloudinary } from "cloudinary";
 import doctorModel from "../models/doctorModel.js";
-import jwt from "jsonwebtoken"; 
+import jwt from "jsonwebtoken";
 import appointmentModel from "../models/appointmentModel.js";
 import userModel from "../models/userModel.js";
 
@@ -101,11 +101,16 @@ const addDoctor = async (req, res) => {
 
 const loginAdmin = async (req, res) => {
   try {
+    if (req.cookies.dtoken) {
+      return res.status(400).json({ message: "Doctor already logged in" });
+    }
     const { email, password } = req.body;
 
     // Validate inputs
     if (!email || !password) {
-      return res.status(400).json({ error: "Email and password are required." });
+      return res
+        .status(400)
+        .json({ error: "Email and password are required." });
     }
 
     if (!validator.isEmail(email)) {
@@ -122,24 +127,43 @@ const loginAdmin = async (req, res) => {
 
     // Generate JWT token
     const token = jwt.sign(
-  {
-    email,
-    role: "admin",  // isse role check kar paayenge
-  },
-  process.env.JWT_SECRET,
-  { expiresIn: "1d" }
-);
+      {
+        email,
+        role: "admin", // isse role check kar paayenge
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    res.cookie("atoken", token, {
+      httpOnly: true,
+      secure: true, // https only (production)
+      sameSite: "none", // cross-site requests allowed
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
 
     return res.status(200).json({
       message: "Admin login successful",
       success: true,
-      token,
+      token: {
+        email,
+      },
     });
   } catch (error) {
     console.error("Admin login error:", error);
     return res.status(500).json({ error: "Server error" });
   }
-}; 
+};
+
+const logoutAdmin = async (req, res) => {
+  res.clearCookie("atoken", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+  });
+
+  return res.json({ success: true, message: "Logged out successfully" });
+};
 
 // API to get all doctors list for admin panel
 const allDoctors = async (req, res) => {
@@ -150,7 +174,7 @@ const allDoctors = async (req, res) => {
     console.log(error);
     res.json({ success: false, message: error.message });
   }
-}; 
+};
 
 // API to get all appointments list
 const appointmentsAdmin = async (req, res) => {
@@ -161,7 +185,7 @@ const appointmentsAdmin = async (req, res) => {
     console.log(error);
     res.json({ success: false, message: error.message });
   }
-}; 
+};
 
 // API for appointment cancellation
 const appointmentCancel = async (req, res) => {
@@ -216,5 +240,12 @@ const adminDashboard = async (req, res) => {
   }
 };
 
-
-export { addDoctor, loginAdmin , allDoctors, appointmentsAdmin, appointmentCancel, adminDashboard };
+export {
+  addDoctor,
+  loginAdmin,
+  logoutAdmin,
+  allDoctors,
+  appointmentsAdmin,
+  appointmentCancel,
+  adminDashboard,
+};

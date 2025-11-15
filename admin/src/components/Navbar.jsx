@@ -2,21 +2,52 @@ import React, { useContext } from "react";
 import { assets } from "../assets/assets";
 import { AdminContext } from "../context/AdminContext";
 import { useNavigate } from "react-router-dom";
-import { DoctorContext } from "../context/DoctorContext";
+import { DoctorContext } from "../context/DoctorContext"; 
+import axios from "axios";
 
 const Navbar = () => {
   const { aToken, setAToken } = useContext(AdminContext);
-  const { dToken, setDToken } = useContext(DoctorContext);
+  const { dToken, setDToken } = useContext(DoctorContext); 
+  const {backendUrl} = useContext(DoctorContext);
 
   const navigate = useNavigate();
 
-  const logout = () => {
+  // const logout = () => {
+  //   navigate("/");
+  //   aToken && setAToken("");
+  //   aToken && localStorage.removeItem("aToken");
+  //   dToken && setDToken("");
+  //   dToken && localStorage.removeItem("dToken");
+  // }; 
+
+  const logout = async () => {
+  try {
+    let url = "";
+
+    if (aToken) {
+      url = `${backendUrl}/api/admin/logout`; 
+      setAToken("");
+      localStorage.removeItem("aToken");
+    } else if (dToken) {
+      url = `${backendUrl}/api/doctor/logout`; 
+       setDToken("");
+      localStorage.removeItem("dToken");
+    } else {
+      return; // no session found
+    }
+
+    // Call backend logout
+    await axios.post(url,);
+
+   
+
     navigate("/");
-    aToken && setAToken("");
-    aToken && localStorage.removeItem("aToken");
-    dToken && setDToken("");
-    dToken && localStorage.removeItem("dToken");
-  };
+
+  } catch (error) {
+    console.error("Logout failed:", error);
+  }
+};
+
 
   return (
     <div className="flex justify-between items-center px-4 sm:px-10 py-3 border-b bg-white">

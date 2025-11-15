@@ -1,22 +1,19 @@
 import doctorModel from "../models/doctorModel.js";
 import bycrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import appointmentModel from "../models/appointmentModel.js"; 
+import appointmentModel from "../models/appointmentModel.js";
 import notificationModel from "../models/notificationModel.js";
-
 
 function generate6DigitCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
-} 
+}
 
 const formatToDDMMYYYY = (dateString) => {
   const [year, month, day] = dateString.split("-"); // "2025-09-06"
   return `${day}_${month}_${year}`; // "06_09_2025"
 };
 
- 
-
- const appointmentReschedule = async (req, res) => {
+const appointmentReschedule = async (req, res) => {
   try {
     const { appointmentId, newSlotDate, newSlotTime } = req.body;
     const doctorId = req.docId; // from authDoctor middleware
@@ -33,7 +30,10 @@ const formatToDDMMYYYY = (dateString) => {
 
     // 2) Ownership check
     if (String(appt.docId) !== String(doctorId)) {
-      return res.json({ success: false, message: "Not authorized to reschedule this appointment" });
+      return res.json({
+        success: false,
+        message: "Not authorized to reschedule this appointment",
+      });
     }
 
     // 3) Status check
@@ -41,7 +41,10 @@ const formatToDDMMYYYY = (dateString) => {
       return res.json({ success: false, message: "Appointment cancelled" });
     }
     if (appt.isCompleted) {
-      return res.json({ success: false, message: "Cannot reschedule completed appointment" });
+      return res.json({
+        success: false,
+        message: "Cannot reschedule completed appointment",
+      });
     }
 
     // 4) Fetch doctor slots
@@ -49,21 +52,26 @@ const formatToDDMMYYYY = (dateString) => {
     if (!doc) {
       return res.json({ success: false, message: "Doctor not found" });
     }
-    let slots_booked = doc.slots_booked || {}; 
+    let slots_booked = doc.slots_booked || {};
 
-    console.log("slots_booked: " , slots_booked)
+    console.log("slots_booked: ", slots_booked);
 
     // 5) Check if new slot is already booked
     const bookedForDate = slots_booked[newSlotDate] || [];
     if (bookedForDate.includes(newSlotTime)) {
-      return res.json({ success: false, message: "Requested slot already booked" });
+      return res.json({
+        success: false,
+        message: "Requested slot already booked",
+      });
     }
 
     // 6) Free old slot
     const oldDate = appt.slotDate;
     const oldTime = appt.slotTime;
     if (slots_booked[oldDate]) {
-      slots_booked[oldDate] = slots_booked[oldDate].filter((t) => t !== oldTime);
+      slots_booked[oldDate] = slots_booked[oldDate].filter(
+        (t) => t !== oldTime
+      );
       if (slots_booked[oldDate].length === 0) {
         delete slots_booked[oldDate];
       }
@@ -107,9 +115,8 @@ const formatToDDMMYYYY = (dateString) => {
     console.error("Reschedule Error:", err);
     return res.json({ success: false, message: err.message });
   }
-}; 
+};
 
- 
 const changeAvailability = async (req, res) => {
   try {
     const { docId } = req.body;
@@ -138,6 +145,9 @@ const doctorList = async (req, res) => {
 // API for doctor Login
 const loginDoctor = async (req, res) => {
   try {
+    if (req.cookies.atoken) {
+      return res.status(400).json({ message: "Admin already logged in" });
+    }
     const { email, password } = req.body;
     const doctor = await doctorModel.findOne({ email });
 
@@ -149,7 +159,20 @@ const loginDoctor = async (req, res) => {
 
     if (isMatch) {
       const token = jwt.sign({ id: doctor._id }, process.env.JWT_SECRET);
-      res.json({ success: true, token });
+
+      res.cookie("dtoken", token, {
+        httpOnly: true,
+        secure: true, // https only (production)
+        sameSite: "none", // cross-site requests allowed
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+      res.json({
+        success: true,
+        token: {
+          name: doctor.name,
+          email: doctor.email,
+        },
+      });
     } else {
       res.json({ success: false, message: "Invalid credentials" });
     }
@@ -157,6 +180,16 @@ const loginDoctor = async (req, res) => {
     console.log(error);
     res.json({ success: false, message: error.message });
   }
+};
+
+const logoutDoctor = async (req, res) => {
+  res.clearCookie("dtoken", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+  });
+
+  return res.json({ success: true, message: "Logged out successfully" });
 };
 
 // API to get doctor appointments for doctor panel
@@ -170,8 +203,7 @@ const appointmentsDoctor = async (req, res) => {
     console.log(error);
     res.json({ success: false, message: error.message });
   }
-}; 
-
+};
 
 const verifyAppointmentByCode = async (req, res) => {
   try {
@@ -179,26 +211,37 @@ const verifyAppointmentByCode = async (req, res) => {
     const doctorId = req.docId;
 
     if (!appointmentId || !code) {
-      return res.json({ success: false, message: "AppointmentId and code required" });
+      return res.json({
+        success: false,
+        message: "AppointmentId and code required",
+      });
     }
 
     const appt = await appointmentModel.findById(appointmentId);
-    if (!appt) return res.json({ success: false, message: "Appointment not found" }); 
+    if (!appt)
+      return res.json({ success: false, message: "Appointment not found" });
 
-    
-
-  if (appt.docId.toString() !== doctorId.toString()) {
-  return res.json({ success: false, message: "Not authorized to verify this appointment" });
-}
+    if (appt.docId.toString() !== doctorId.toString()) {
+      return res.json({
+        success: false,
+        message: "Not authorized to verify this appointment",
+      });
+    }
     if (appt.cancelled) {
       return res.json({ success: false, message: "Appointment cancelled" });
     }
     if (appt.isVerified) {
-      return res.json({ success: false, message: "Appointment already verified" });
+      return res.json({
+        success: false,
+        message: "Appointment already verified",
+      });
     }
 
     if (!appt.verificationCode) {
-      return res.json({ success: false, message: "No verification code available" });
+      return res.json({
+        success: false,
+        message: "No verification code available",
+      });
     }
 
     // if (new Date() > new Date(appt.verificationExpiresAt)) {
@@ -215,7 +258,10 @@ const verifyAppointmentByCode = async (req, res) => {
     appt.verificationCode = undefined; // remove code after use (optional)
     await appt.save();
 
-    return res.json({ success: true, message: "Appointment verified successfully" });
+    return res.json({
+      success: true,
+      message: "Appointment verified successfully",
+    });
   } catch (err) {
     console.error(err);
     return res.json({ success: false, message: err.message });
@@ -225,12 +271,12 @@ const verifyAppointmentByCode = async (req, res) => {
 // API to mark appointment completed for doctor panel
 const appointmentComplete = async (req, res) => {
   try {
-    const { appointmentId } = req.body; 
-     const docId = req.docId ;
+    const { appointmentId } = req.body;
+    const docId = req.docId;
 
-    const appointmentData = await appointmentModel.findById(appointmentId); 
+    const appointmentData = await appointmentModel.findById(appointmentId);
 
-     if (!appointmentData) {
+    if (!appointmentData) {
       return res.json({ success: false, message: "Appointment not found" });
     }
 
@@ -251,7 +297,6 @@ const appointmentComplete = async (req, res) => {
         isCompleted: true,
       });
 
-      
       return res.json({ success: true, message: "Appointment Completed" });
     } else {
       return res.json({ success: false, message: "Mark Failed" });
@@ -265,8 +310,8 @@ const appointmentComplete = async (req, res) => {
 // API to cancel appointment for doctor panel
 const appointmentCancel = async (req, res) => {
   try {
-    const { appointmentId } = req.body; 
-    const docId = req.docId ;
+    const { appointmentId } = req.body;
+    const docId = req.docId;
 
     const appointmentData = await appointmentModel.findById(appointmentId);
 
@@ -285,9 +330,9 @@ const appointmentCancel = async (req, res) => {
 };
 
 // API to get dashboard data for doctor panel
- const doctorDashboard = async (req, res) => {
-  try { 
-    const docId = req.docId
+const doctorDashboard = async (req, res) => {
+  try {
+    const docId = req.docId;
     const appointments = await appointmentModel.find({ docId: req.docId });
 
     let totalEarnings = 0;
@@ -360,14 +405,15 @@ const appointmentCancel = async (req, res) => {
     // 📊 Comparison percent (today vs last week same day)
     const compareToLastWeek =
       lastWeekAppointments > 0
-        ? ((todayAppointments - lastWeekAppointments) / lastWeekAppointments) * 100
+        ? ((todayAppointments - lastWeekAppointments) / lastWeekAppointments) *
+          100
         : todayAppointments > 0
         ? 100
-        : 0; 
+        : 0;
 
-         const notifications = await notificationModel
-              .find({ docId })
-              .sort({ createdAt: -1 });
+    const notifications = await notificationModel
+      .find({ docId })
+      .sort({ createdAt: -1 });
 
     const dashData = {
       total: {
@@ -396,13 +442,13 @@ const appointmentCancel = async (req, res) => {
   }
 };
 
-
-
 // API to get doctor profile for Doctor panel
 const doctorProfile = async (req, res) => {
   try {
     // const { docId } = req.body;
-    const profileData = await doctorModel.findById(req.docId).select("-password");
+    const profileData = await doctorModel
+      .findById(req.docId)
+      .select("-password");
 
     res.json({ success: true, profileData });
   } catch (error) {
@@ -414,11 +460,12 @@ const doctorProfile = async (req, res) => {
 // API to update doctor profile data from Doctor panel
 const updateDoctorProfile = async (req, res) => {
   try {
-    const {  fees, address, available } = req.body;
-    const docId = req.docId ;
-    console.log(docId, fees, address, available) 
+    const { fees, address, available } = req.body;
+    const docId = req.docId;
+    console.log(docId, fees, address, available);
 
-    if (!docId) return res.json({ success: false, message: "Doctor ID missing" });
+    if (!docId)
+      return res.json({ success: false, message: "Doctor ID missing" });
 
     await doctorModel.findByIdAndUpdate(docId, { fees, address, available });
 
@@ -433,6 +480,7 @@ export {
   changeAvailability,
   doctorList,
   loginDoctor,
+  logoutDoctor,
   appointmentsDoctor,
   appointmentCancel,
   appointmentComplete,
