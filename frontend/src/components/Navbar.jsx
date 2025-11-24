@@ -31,7 +31,7 @@ const Navbar = () => {
         );
         if (data.success) {
           setNotifications(data.notifications);
-          console.log(data.notifications);
+          console.log("Notifications : ",data.notifications);
         }
       } catch (err) {
         console.error("Error fetching notifications:", err);
@@ -149,7 +149,7 @@ const Navbar = () => {
 
                           {/* Message */}
                           <p className="text-sm text-gray-600 mt-1">
-                            {n.message.patient}
+                            {n?.message?.patient}
                           </p>
 
                           {/* Time */}

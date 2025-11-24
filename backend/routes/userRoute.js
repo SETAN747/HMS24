@@ -29,7 +29,7 @@ userRouter.post("/register", signupRequest);
 userRouter.post("/register/verify-otp",verifyOtpMiddleware,registerUser);
 userRouter.post("/register/resend-otp", resendSignupOtp);
 userRouter.post("/login", loginUser); 
-userRouter.post("/logout", logoutUser);
+userRouter.post("/logout",authUser ,logoutUser);
 
 userRouter.get("/get-profile", authUser, getProfile);
 userRouter.post(

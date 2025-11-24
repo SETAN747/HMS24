@@ -13,11 +13,42 @@ import genAI from "../config/gemini.js";
 import { getIO } from "../config/socket.io.js";
 import SignupOtp from "../models/SignupOtp.js";
 import { sendMail } from "../config/mailer.js";
+import { v4 as uuidv4 } from "uuid";
 
 
 // ✅ Helper: Generate JWT Token
 const generateToken = (userId) => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: "7d" });
+}; 
+
+const generateOrUpdateSession = (user, clientIp, userAgent) => { 
+
+  const formatReadableDate = (date) =>
+  new Intl.DateTimeFormat("en-IN", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+
+  const now = formatReadableDate(new Date());
+const expires = formatReadableDate(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)); 
+
+  if (!user.activeSession || !user.activeSession.sessionId) {
+    // Create new session
+    user.activeSession = {
+      sessionId: uuidv4(),
+      ipAddress: clientIp,
+      userAgent,
+      createdAt: now,
+      expiresAt: expires,
+    };
+  } else {
+    // Update existing session
+    user.activeSession.ipAddress = clientIp;
+    user.activeSession.userAgent = userAgent;
+    user.activeSession.expiresAt = expires;
+  }
+
+  return user.activeSession;
 };
 
 function generate6DigitCode() {
@@ -188,6 +219,14 @@ const googleAuthCallback = async (req, res) => {
     // JWT create
     const token = generateToken(user._id); 
 
+    // Get IP + device
+    const clientIp = req.headers["x-forwarded-for"]?.split(",")[0] || req.socket.remoteAddress || req.ip;
+    const userAgent = req.headers["user-agent"];
+
+    // ⭐ Add or update active session here
+    generateOrUpdateSession(user, clientIp, userAgent);
+    await user.save();
+
      res.cookie("token", token, {
       httpOnly: true,
       secure: true,
@@ -232,7 +271,14 @@ const loginUser = async (req, res) => {
     const isMatch = await bycrypt.compare(password, user.password);
 
     if (isMatch) {
-      const token = generateToken(user._id);
+      const token = generateToken(user._id); 
+
+       const clientIp = req.headers["x-forwarded-for"]?.split(",")[0] || req.socket.remoteAddress || req.ip;
+    const userAgent = req.headers["user-agent"]; 
+
+     const sessionData = generateOrUpdateSession(user, clientIp, userAgent); 
+
+      await user.save();
 
       
       res.cookie("token", token, {
@@ -240,7 +286,7 @@ const loginUser = async (req, res) => {
   secure: true,        // https only (production)
   sameSite: "none",    // cross-site requests allowed
   maxAge: 7 * 24 * 60 * 60 * 1000
-}); 
+});       
 
  res.json({ success: true,  token: {
     name: user.name,
@@ -255,7 +301,22 @@ const loginUser = async (req, res) => {
   }
 }; 
 
- const logoutUser = async (req, res) => {
+ const logoutUser = async (req, res) => { 
+  
+  console.log(req.user)
+  const userId = req.user.userId; 
+  if (userId) {
+    await userModel.findByIdAndUpdate(userId, {
+      activeSession: {
+        sessionId: null,
+        ipAddress: null,
+        createdAt: null,
+        expiresAt: null,
+        userAgent: null
+      }
+    });
+  }
+
   res.clearCookie("token", {
     httpOnly: true,
     secure: true,

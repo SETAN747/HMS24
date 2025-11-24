@@ -4,7 +4,7 @@ const notificationSchema = new mongoose.Schema({
   userId: { type: String, required: true },
    docId: { type: String },
   title: { type: String, required: true },
-   message: {
+   message: { 
     patient: { type: String },
     doctor: { type: String },
   },
