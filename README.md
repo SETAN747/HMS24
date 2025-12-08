@@ -21,6 +21,12 @@ Prescrito is a simple website where you can easily manage your healthcare! It's 
 
 ![All-Doctors](./screenshots/alldoctors.png)
 
+![Booking-Appointment Form](./screenshots/bookingform.png)
+
+![Doctor-Dashboard](./screenshots/doctordashboard.png)
+
+
+
 
 <!-- Table of Contents -->
 
