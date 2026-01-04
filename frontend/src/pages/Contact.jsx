@@ -3,27 +3,82 @@ import { assets } from "../assets/assets";
 
 const Contact = () => {
   return (
-    <div>
-      <div className="text-center text-2xl pt-10 text-gray-700 font-semibold">
-        <p>
-          CONTACT <span>US</span>
+    <div className="max-w-6xl mx-auto px-4">
+
+      {/* Header */}
+      <div className="text-center pt-6">
+        <h1 className="text-3xl sm:text-4xl font-bold text-gray-800">
+          Contact <span className="text-customPrimary">Us</span>
+        </h1>
+        <p className="text-gray-500 mt-2">
+          We’re here to help and answer any questions you may have
         </p>
       </div>
 
-      <div className="my-10 flex flex-col justify-center md:flex-row gap-10 mb-28 text-sm">
-        <img className="w-full md:max-w-[360px]" src={assets.contact_image} alt="" />
+      {/* Content */}
+      <div className="mt-14 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
 
-        <div className="flex flex-col justify-center items-start gap-6">
-          <p className="font-semibold text-lg text-grsy-600">OUR OFFICE</p>
-          <p className="text-gray-500">00000 Willms Station
-          Suite 000,<br /> Washington, USA</p>
-          <p className="text-gray-500">Tel: (000) 000-0000 <br />
-          Email: greatstackdev@gmail.com</p>
-          <p className="font-semibold text-lg text-gray-600" >CAREERS AT PRESCRIPTO</p>
-          <p className="text-gray-500">Learn more about our teams and job openings.</p>
-          <button className="border border-black px-8 py-4 text-sm hover:bg-black hover:text-white transition-all duration-500 ">Explore jobs</button>
+        {/* Image */}
+        <div className="flex justify-center animate-[float_6s_ease-in-out_infinite]">
+          <img
+            src={assets.contact_image}
+            alt="Contact"
+            className="rounded-2xl shadow-lg max-w-md w-full"
+          />
         </div>
-      </div>
+
+        {/* Info Card */}
+        <div className="bg-white shadow-xl rounded-2xl p-8 space-y-6 border border-gray-100 animate-[float_6s_ease-in-out_infinite]">
+
+          {/* Office */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800">
+              Our Office
+            </h3>
+            <p className="text-gray-500 mt-2 leading-relaxed">
+              00000 Willms Station <br />
+              Suite 000, Washington, USA
+            </p>
+          </div>
+
+          {/* Contact */}
+          <div >
+            <p className="text-gray-500">
+              <span className="font-medium text-gray-700">Phone:</span>{" "}
+              (000) 000-0000
+            </p>
+            <p className="text-gray-500">
+              <span className="font-medium text-gray-700">Email:</span>{" "}
+              utkarshmehta777@gmail.com
+            </p>
+          </div>
+
+          {/* Careers */}
+          <div className="pt-4 border-t">
+            <h3 className="text-lg font-semibold text-gray-800">
+              Careers at Prescripto
+            </h3>
+            <p className="text-gray-500 mt-2">
+              Join our growing team and help us build better healthcare
+              experiences.
+            </p>
+          </div>
+
+          {/* CTA */}
+          <button className="mt-4 bg-customPrimary text-white px-8 py-3 rounded-full hover:opacity-90 transition">
+            Explore Jobs
+          </button>
+        </div>
+      </div> 
+       {/* Floating animation */}
+      <style>
+        {`
+          @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-14px); }
+          }
+        `}
+      </style>
     </div>
   );
 };

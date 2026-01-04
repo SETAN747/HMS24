@@ -5,134 +5,140 @@ import { FaStar, FaStarHalfAlt, FaRegStar } from "react-icons/fa";
 
 const Doctors = () => {
   const { speciality } = useParams();
-  const [filterDoc, setFilterDoc] = useState([]);
-  const [showFilter,setShowFilter] = useState(false)
-  const navigate = useNavigate();
-  console.log(speciality);
   const { doctors } = useContext(AppContext);
+  const [filterDoc, setFilterDoc] = useState([]);
+  const navigate = useNavigate();
 
-  const applyFilter = () => {
+  useEffect(() => {
     if (speciality) {
-      setFilterDoc(doctors.filter((doc) => doc.speciality === speciality));
+      setFilterDoc(doctors.filter(doc => doc.speciality === speciality));
     } else {
       setFilterDoc(doctors);
     }
-  }; 
+  }, [doctors, speciality]);
 
-   // helper: render stars based on averageRating
-  const renderStars = (rating) => {
+  const renderStars = (rating = 0) => {
     const stars = [];
-    const fullStars = Math.floor(rating);
-    const halfStar = rating % 1 >= 0.5;
+    const full = Math.floor(rating);
+    const half = rating % 1 >= 0.5;
 
-    for (let i = 0; i < fullStars; i++) stars.push(<FaStar key={i} className="text-yellow-400" />);
-    if (halfStar) stars.push(<FaStarHalfAlt key="half" className="text-yellow-400" />);
-    while (stars.length < 5) stars.push(<FaRegStar key={`empty-${stars.length}`} className="text-gray-300" />);
-
+    for (let i = 0; i < full; i++)
+      stars.push(<FaStar key={i} className="text-yellow-400" />);
+    if (half)
+      stars.push(<FaStarHalfAlt key="half" className="text-yellow-400" />);
+    while (stars.length < 5)
+      stars.push(<FaRegStar key={stars.length} className="text-gray-300" />);
     return stars;
   };
 
-  useEffect(() => {
-    applyFilter();
-  }, [doctors, speciality]);
+  const specialties = [
+    "General physician",
+    "Gynecologist",
+    "Dermatologist",
+    "Pediatricians",
+    "Neurologist",
+    "Gastroenterologist",
+  ];
 
   return (
-    <div>
-      <p>Browse through the doctors specialist.</p>
-      <div className="flex flex-col sm:flex-row items-start gap-5 mt-5">
-        <button onClick={()=>setShowFilter(prev => !prev)}  className={`py-1 px-3 border rounded text-sm transition-all sm:hidden ${showFilter ? 'bg-customPrimary text-white' : ''}`}>Filters</button>
-        <div className={`flex flex-col gap-4 text-sm text-gray-600 ${showFilter ? 'flex' : 'sm:flex' }`}>
-          <p
+    <div className="relative min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 px-4 py-10">
+      
+      {/* Header */}
+      <div className="max-w-7xl mx-auto text-center mb-16">
+        <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900">
+          Find the <span className="text-blue-600">Right Doctor</span>
+        </h1>
+        <p className="mt-4 text-gray-500 max-w-2xl mx-auto">
+          Consult verified doctors, compare ratings and book appointments instantly.
+        </p>
+      </div>
+
+      {/* Filters */}
+      <div className="max-w-7xl mx-auto mb-12 flex flex-wrap justify-center gap-3">
+        {specialties.map(sp => (
+          <button
+            key={sp}
             onClick={() =>
-              speciality === "General physician"
+              speciality === sp
                 ? navigate("/doctors")
-                : navigate("/doctors/General physician")
+                : navigate(`/doctors/${sp}`)
             }
-            className={`w-[94vw] sm:w-auto pl-3 py-1.5 pr-16 border border-gray-300 rounded transition-all cursor-pointer ${speciality === "General physician" ? " bg-customSecondary text-black" : ""}  `}
+            className={`px-5 py-2 rounded-full text-sm font-medium backdrop-blur-md transition-all
+              ${
+                speciality === sp
+                  ? "bg-blue-600 text-white shadow-lg scale-105"
+                  : "bg-white/70 text-gray-700 hover:bg-blue-100"
+              }`}
           >
-            General physician
-          </p>
-          <p
-            onClick={() =>
-              speciality === "Gynecologist"
-                ? navigate("/doctors")
-                : navigate("/doctors/Gynecologist")
-            }
-            className={`w-[94vw] sm:w-auto pl-3 py-1.5 pr-16 border border-gray-300 rounded transition-all cursor-pointer ${speciality === "Gynecologist" ? " bg-customSecondary text-black" : ""} `}
+            {sp}
+          </button>
+        ))}
+      </div>
+
+      {/* Doctors Grid */}
+      <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
+        {filterDoc.map((item) => (
+          <div
+            key={item._id}
+            onClick={() => navigate(`/appointment/${item._id}`)}
+            className="group relative cursor-pointer"
           >
-            Gynecologist
-          </p>
-          <p
-            onClick={() =>
-              speciality === "Dermatologist"
-                ? navigate("/doctors")
-                : navigate("/doctors/Dermatologist")
-            }
-            className={`w-[94vw] sm:w-auto pl-3 py-1.5 pr-16 border border-gray-300 rounded transition-all cursor-pointer ${speciality === "Dermatologist" ? " bg-customSecondary text-black" : ""} `}
-          >
-            Dermatologist
-          </p>
-          <p
-            onClick={() =>
-              speciality === "Pediatricians"
-                ? navigate("/doctors")
-                : navigate("/doctors/Pediatricians")
-            }
-            className={`w-[94vw] sm:w-auto pl-3 py-1.5 pr-16 border border-gray-300 rounded transition-all cursor-pointer ${speciality === "Pediatricians" ? " bg-customSecondary text-black" : ""} `}
-          >
-            Pediatricians
-          </p>
-          <p
-            onClick={() =>
-              speciality === "Neurologist"
-                ? navigate("/doctors")
-                : navigate("/doctors/Neurologist")
-            }
-            className={`w-[94vw] sm:w-auto pl-3 py-1.5 pr-16 border border-gray-300 rounded transition-all cursor-pointer ${speciality === "Neurologist" ? " bg-customSecondary text-black" : ""} `}
-          >
-            Neurologist
-          </p>
-          <p
-            onClick={() =>
-              speciality === "Gastroenterologist"
-                ? navigate("/doctors")
-                : navigate("/doctors/Gastroenterologist")
-            }
-            className={`w-[94vw] sm:w-auto pl-3 py-1.5 pr-16 border border-gray-300 rounded transition-all cursor-pointer ${speciality === "Gastroenterologist" ? " bg-customSecondary text-black" : ""} `}
-          >
-            Gastroenterologist
-          </p>
-        </div>
-        <div className="w-full grid grid-cols-auto gap-4 gap-y-6">
-          {filterDoc.map((item, index) => (
-            <div
-              onClick={() => navigate(`/appointment/${item._id}`)}
-              className="border border-blue-200 rounded-xl overflow-hidden cursor-pointer hover:translate-y-[-10px] transition-all duration-500"
-              key={index}
-            >
-              <img className="bg-blue-50" src={item.image} alt="" />
-              <div className="p-4">
-                <div className={`flex items-center gap-2 text-sm text-center ${
-                    item.available ? "text-green-500" : "text-gray-500"
-                  }`}>
-                  <p className={`w-2 h-2 ${
-                      item.available ? "bg-green-500" : "bg-gray-500"
-                    } rounded-full`}></p>
-                  <p>{item.available ? "Available" : "Not Available"}</p>
-                </div>
-                <p className="text-gray-500 text-lg font-medium">{item.name}</p>
-                <p className="text-gray-600 text-sm">{item.speciality}</p> 
-                 <div className="flex items-center gap-2 mt-2">
-                  <div className="flex items-center">{renderStars(item.averageRating || 0)}</div>
-                  <span className="text-sm text-gray-500">
-                    ({item.totalReviews || 0} reviews)
+            {/* Glow */}
+            <div className="absolute -inset-1 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-3xl blur opacity-0 group-hover:opacity-40 transition" />
+
+            {/* Card */}
+            <div className="relative bg-white/80 backdrop-blur-xl rounded-3xl p-6 shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-3">
+              
+              {/* Avatar */}
+              <div className="flex justify-center">
+                <img
+                  src={item.image}
+                  alt={item.name}
+                  className="w-32 h-32 rounded-full object-cover ring-4 ring-white shadow-md group-hover:scale-105 transition"
+                />
+              </div>
+
+              {/* Info */}
+              <div className="text-center mt-4">
+                <h3 className="text-xl font-bold text-gray-900">
+                  Dr. {item.name}
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  {item.speciality}
+                </p>
+
+                {/* Availability */}
+                <div className="flex justify-center items-center gap-2 mt-3 text-sm">
+                  <span
+                    className={`w-2.5 h-2.5 rounded-full ${
+                      item.available ? "bg-green-500" : "bg-gray-400"
+                    }`}
+                  />
+                  <span
+                    className={`${
+                      item.available ? "text-green-600" : "text-gray-500"
+                    }`}
+                  >
+                    {item.available ? "Available Today" : "Unavailable"}
                   </span>
                 </div>
-              
+
+                {/* Rating */}
+                <div className="flex justify-center items-center gap-2 mt-3">
+                  <div className="flex">{renderStars(item.averageRating)}</div>
+                  <span className="text-xs text-gray-500">
+                    ({item.totalReviews || 0})
+                  </span>
+                </div>
+
+                {/* CTA */}
+                <button className="mt-6 w-full py-3 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold tracking-wide hover:opacity-90 transition">
+                  Book Appointment
+                </button>
               </div>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
     </div>
   );

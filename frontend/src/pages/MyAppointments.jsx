@@ -159,141 +159,179 @@ const MyAppointments = () => {
 
   return (
     <>
-      <div>
-        <p className="pb-3 mt-12 font-medium text-zinc-700 border-b">
-          My Appointments
-        </p>
-        <div>
-          {appointments.map((item, index) => (
-            <div
-              className="grid grid-cols-[1fr_2fr] gap-4 sm:flex sm:gap-6 py-2 border-b"
-              key={index}
-            >
-              <div>
-                <img
-                  className="w-32 bg-indigo-50"
-                  src={item.docData.image}
-                  alt=""
-                />
-              </div>
-              <div className="flex-1 text-sm text-zinc-600">
-                <p className="text-neutral-800 font-semibold">
-                  {item.docData.name}
-                </p>
-                <p>{item.docData.speciality}</p>
-                <p className="text-zinc-700 font-medium mt-1">Address:</p>
-                <p className="text-xs">{item.docData.address.line1}</p>
-                <p className="text-xs">{item.docData.address.line2}</p>
-                <p className="text-xs mt-1">
-                  <span className="text-sm text-neutral-700 font-medium">
-                   Appointment Date & Time :
-                  </span>{" "}
-                  {slotDateFormat(item.slotDate)} | {item.slotTime}
-                </p>
-                <p className="text-xs mt-1">
-                  {" "}
-                  Your Appointment Verification Code -
-                  <span className="px-2 py-1 text-sm font-mono tracking-wider bg-indigo-100 text-indigo-700 rounded">
-                    {item.verificationCode}
-                  </span>
-                </p>
-              </div>
-              <div></div>
-              <div className="flex flex-col gap-2 justify-end ">
-                {!item.cancelled && item.payment && !item.isCompleted && (
-                  <button className="text-sm text-stone-500 text-center sm:min-w-48 py-2 border bg-indigo-50">
-                    Paid
-                  </button>
-                )}
-                {!item.cancelled && !item.payment && !item.isCompleted && (
-                  <button
-                    onClick={() => appointmentRazorpay(item?._id)}
-                    className="text-sm text-stone-500 text-center sm:min-w-48 py-2 border rounded hover:bg-customPrimary hover:text-white transition-all duration-300 "
-                  >
-                    Pay Online
-                  </button>
-                )}
-                {!item.cancelled && !item.isCompleted && (
-                  <button
-                    onClick={() => cancelAppointment(item._id)}
-                    className="text-sm text-stone-500 text-center sm:min-w-48 py-2 border rounded hover:bg-red-600 hover:text-white transition-all duration-300"
-                  >
-                    Cancel Appointment{" "}
-                  </button>
-                )}
-                {item.cancelled && !item.isCompleted && (
-                  <button className="sm:min-w-48 py-2 border border-red-500 rounded text-red-500">
-                    Appointment cancelled
-                  </button>
-                )}
-                {item.isCompleted && (
-                  <button className="sm:min-w-48 py-2 border border-green-500 rounded text-green-500">
-                    Completed
-                  </button>
-                )}
-                {item.isCompleted && !item.isReviewed && (
-                  <button
-                    onClick={() => setShowReview(item._id)}
-                    className="border border-blue-500 text-blue-500 px-3 py-1 rounded"
-                  >
-                    Rate & Review
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-      {showReview && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-          <div className="bg-white rounded-2xl shadow-xl w-[90%] max-w-md p-6 relative">
-            <button
-              onClick={() => setShowReview(null)}
-              className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
-            >
-              ✕
-            </button>
+  <div className="max-w-6xl mx-auto px-4 py-10">
+    <h2 className="text-2xl font-semibold text-gray-800 mb-8">
+      My Appointments
+    </h2>
 
-            <h2 className="text-xl font-semibold text-gray-800 mb-4 text-center">
-              Rate & Review
-            </h2>
-
-            {/* Rating Stars */}
-            <div className="flex justify-center mb-4">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <span
-                  key={star}
-                  onClick={() => setRating(star)}
-                  className={`text-3xl cursor-pointer transition ${
-                    star <= rating ? "text-yellow-400" : "text-gray-300"
-                  }`}
-                >
-                  ★
-                </span>
-              ))}
-            </div>
-
-            {/* Review Text Area */}
-            <textarea
-              className="w-full border rounded-lg p-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
-              rows="4"
-              placeholder="Write your experience..."
-              value={reviewText}
-              onChange={(e) => setReviewText(e.target.value)}
+    <div className="space-y-6">
+      {appointments.map((item, index) => (
+        <div
+          key={index}
+          className="bg-white rounded-2xl shadow-md border border-gray-200 p-6 flex flex-col lg:flex-row gap-6 hover:shadow-xl transition"
+        >
+          {/* Doctor Image */}
+          <div className="w-full lg:w-40 flex-shrink-0">
+            <img
+              src={item.docData.image}
+              alt=""
+              className="w-full h-40 object-cover rounded-xl bg-indigo-50"
             />
+          </div>
 
-            {/* Submit Button */}
-            <button
-              onClick={() => handleReviewSubmit(showReview)}
-              className="mt-4 w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition"
-            >
-              Submit Review
-            </button>
+          {/* Doctor Info */}
+          <div className="flex-1 text-sm text-gray-600">
+            <h3 className="text-lg font-semibold text-gray-800">
+              {item.docData.name}
+            </h3>
+            <p className="text-indigo-600">{item.docData.speciality}</p>
+
+            <div className="mt-3 space-y-1">
+              <p className="text-xs">
+                <span className="font-medium text-gray-700">Address:</span>{" "}
+                {item.docData.address.line1},{" "}
+                {item.docData.address.line2}
+              </p>
+
+              <p className="text-xs">
+                <span className="font-medium text-gray-700">
+                  Appointment:
+                </span>{" "}
+                {slotDateFormat(item.slotDate)} | {item.slotTime}
+              </p>
+
+              <p className="text-xs">
+                <span className="font-medium text-gray-700">
+                  Verification Code:
+                </span>{" "}
+                <span className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded font-mono tracking-wider">
+                  {item.verificationCode}
+                </span>
+              </p>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex flex-col justify-between gap-3 min-w-[180px]">
+            {!item.cancelled && item.payment && !item.isCompleted && (
+              <StatusBadge text="Paid" color="green" />
+            )}
+
+            {!item.cancelled && !item.payment && !item.isCompleted && (
+              <ActionBtn
+                text="Pay Online"
+                onClick={() => appointmentRazorpay(item._id)}
+              />
+            )}
+
+            {!item.cancelled && !item.isCompleted && (
+              <DangerBtn
+                text="Cancel Appointment"
+                onClick={() => cancelAppointment(item._id)}
+              />
+            )}
+
+            {item.cancelled && (
+              <StatusBadge text="Cancelled" color="red" />
+            )}
+
+            {item.isCompleted && (
+              <StatusBadge text="Completed" color="green" />
+            )}
+
+            {item.isCompleted && !item.isReviewed && (
+              <button
+                onClick={() => setShowReview(item._id)}
+                className="border border-indigo-500 text-indigo-600 py-2 rounded-lg hover:bg-indigo-50 transition"
+              >
+                Rate & Review
+              </button>
+            )}
           </div>
         </div>
-      )}
-    </>
+      ))}
+    </div>
+  </div>
+   {showReview && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div className="bg-white/90 rounded-3xl shadow-2xl w-[90%] max-w-md p-6 relative">
+      <button
+        onClick={() => setShowReview(null)}
+        className="absolute top-4 right-4 text-gray-400 hover:text-gray-700"
+      >
+        ✕
+      </button>
+
+      <h2 className="text-xl font-semibold text-gray-800 text-center mb-4">
+        Rate Your Experience
+      </h2>
+
+      {/* Stars */}
+      <div className="flex justify-center gap-2 mb-4">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <span
+            key={star}
+            onClick={() => setRating(star)}
+            className={`text-3xl cursor-pointer transition ${
+              star <= rating ? "text-yellow-400" : "text-gray-300"
+            }`}
+          >
+            ★
+          </span>
+        ))}
+      </div>
+
+      <textarea
+        rows="4"
+        className="w-full border rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+        placeholder="Share your experience..."
+        value={reviewText}
+        onChange={(e) => setReviewText(e.target.value)}
+      />
+
+      <button
+        onClick={() => handleReviewSubmit(showReview)}
+        className="mt-5 w-full bg-indigo-600 text-white py-3 rounded-xl hover:bg-indigo-700 transition"
+      >
+        Submit Review
+      </button>
+    </div>
+  </div>
+)}
+</>
+
   );
-};
+}; 
+
+const StatusBadge = ({ text, color }) => (
+  <div
+    className={`py-2 rounded-lg text-center text-sm font-medium border ${
+      color === "green"
+        ? "border-green-500 text-green-600 bg-green-50"
+        : "border-red-500 text-red-600 bg-red-50"
+    }`}
+  >
+    {text}
+  </div>
+);
+
+const ActionBtn = ({ text, onClick }) => (
+  <button
+    onClick={onClick}
+    className="py-2 rounded-lg border border-indigo-500 text-indigo-600 hover:bg-indigo-500 hover:text-white transition"
+  >
+    {text}
+  </button>
+);
+
+const DangerBtn = ({ text, onClick }) => (
+  <button
+    onClick={onClick}
+    className="py-2 rounded-lg border border-red-500 text-red-600 hover:bg-red-500 hover:text-white transition"
+  >
+    {text}
+  </button>
+);
+
 
 export default MyAppointments;

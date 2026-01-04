@@ -3,66 +3,111 @@ import { assets } from "../assets/assets";
 
 const About = () => {
   return (
-    <div>
-      <div className="text-center text-2xl pt-10 text-gray-500">
-        <p>
-          About <span className="text-gray-700 font-medium">US</span>
+    <div className="max-w-6xl mx-auto px-4">
+
+      {/* Header */}
+      <div className="text-center pt-8">
+        <h1 className="text-3xl sm:text-4xl font-bold text-gray-800">
+          About <span className="text-customPrimary">Us</span>
+        </h1>
+        <p className="text-gray-500 mt-3 max-w-2xl mx-auto">
+          Your trusted partner in modern healthcare management
         </p>
       </div>
 
-      <div className="my-10 flex flex-col md:flex-row gap-12">
-        <img
-          className="w-full md:max-w-[360px]"
-          src={assets.about_image}
-          alt=""
-        />
-        <div className="flex flex-col justify-center gap-6 md:w-2/4 text-sm text-gray-600">
+      {/* About Section */}
+      <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+
+        {/* Image */}
+        <div className="flex justify-center">
+          <img
+            src={assets.about_image}
+            alt="About Prescripto"
+            className="rounded-2xl shadow-lg max-w-md w-full"
+          />
+        </div>
+
+        {/* Text */}
+        <div className="space-y-6 text-gray-600 leading-relaxed animate-[float_4s_ease-in-out_infinite]">
           <p>
-            Welcome to Prescripto, your trusted partner in managing your
-            healthcare needs conveniently and efficiently. At Prescripto, we
-            understand the challenges individuals face when it comes to
-            scheduling doctor appointments and managing their health records.
+            Welcome to <span className="font-medium text-gray-800">Prescripto</span>,
+            your trusted partner in managing your healthcare needs conveniently
+            and efficiently. We understand the challenges individuals face when
+            it comes to scheduling doctor appointments and maintaining health
+            records.
           </p>
+
           <p>
             Prescripto is committed to excellence in healthcare technology. We
-            continuously strive to enhance our platform, integrating the latest
-            advancements to improve user experience and deliver superior
-            service. Whether you're booking your first appointment or managing
-            ongoing care, Prescripto is here to support you every step of the
-            way.
+            continuously improve our platform by integrating the latest
+            advancements to deliver a smooth and reliable experience.
           </p>
-          <b className="text-gray-800">Our Vision</b>
-          <p>
-            Our vision at Prescripto is to create a seamless healthcare
-            experience for every user. We aim to bridge the gap between patients
-            and healthcare providers, making it easier for you to access the
-            care you need, when you need it.
-          </p>
+
+          <div className="pt-4 border-t">
+            <h3 className="text-lg font-semibold text-gray-800">
+              Our Vision
+            </h3>
+            <p className="mt-2">
+              Our vision is to create a seamless healthcare experience by
+              bridging the gap between patients and healthcare providers —
+              making quality care accessible anytime, anywhere.
+            </p>
+          </div>
         </div>
       </div>
 
-      <div className="text-xl my-4" >
-        <p className="text-gray-700 font-semibold">
-          WHY <span> CHOOSE US</span>
-        </p>
-      </div>
+      {/* Why Choose Us */}
+      <div className="mt-20">
+        <h2 className="text-2xl font-semibold text-gray-800 text-center">
+          Why <span className="text-customPrimary">Choose Us</span>
+        </h2>
 
-      <div className="flex flex-col md:flex-row mb-20">
-        <div className="border px-10 md:px-16 py-8 sm:py-16 flex-col gap-5 text-[15px] hover:bg-customPrimary hover:text-white transition-all duration-300 text-gray-600 cursor-pointer">
-          <b>EFFICIENCY:</b>
-          <p>Streamlined appointment scheduling that fits into your busy lifestyle.</p>
-        </div>
+        <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
 
-        <div className="border px-10 md:px-16 py-8 sm:py-16 flex-col gap-5 text-[15px] hover:bg-customPrimary hover:text-white transition-all duration-300 text-gray-600 cursor-pointer">
-          <b>CONVENIENCE:</b>
-          <p>Access to a network of trusted healthcare professionals in your area.</p>
-        </div>
+          {/* Card 1 */}
+          <div className="bg-white border rounded-2xl p-8 text-center shadow-sm hover:shadow-lg transition">
+            <h3 className="font-semibold text-gray-800 mb-3">
+              Efficiency
+            </h3>
+            <p className="text-gray-600 text-sm">
+              Streamlined appointment scheduling that fits perfectly into your
+              busy lifestyle.
+            </p>
+          </div>
 
-        <div className="border px-10 md:px-16 py-8 sm:py-16 flex-col gap-5 text-[15px] hover:bg-customPrimary hover:text-white transition-all duration-300 text-gray-600 cursor-pointer">
-          <b>PERSONALIZATION:</b>
-          <p>Tailored recommendations and reminders to help you stay on top of your health.</p>
+          {/* Card 2 */}
+          <div className="bg-white border rounded-2xl p-8 text-center shadow-sm hover:shadow-lg transition">
+            <h3 className="font-semibold text-gray-800 mb-3">
+              Convenience
+            </h3>
+            <p className="text-gray-600 text-sm">
+              Easy access to a network of trusted healthcare professionals near
+              you.
+            </p>
+          </div>
+
+          {/* Card 3 */}
+          <div className="bg-white border rounded-2xl p-8 text-center shadow-sm hover:shadow-lg transition">
+            <h3 className="font-semibold text-gray-800 mb-3">
+              Personalization
+            </h3>
+            <p className="text-gray-600 text-sm">
+              Smart reminders and tailored recommendations to keep your health
+              on track.
+            </p>
+          </div>
+
         </div>
-      </div>
+      </div> 
+       {/* Floating animation */}
+      <style>
+        {`
+          @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-14px); }
+          }
+        `}
+      </style>
     </div>
   );
 };

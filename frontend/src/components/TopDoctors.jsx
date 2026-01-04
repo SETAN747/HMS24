@@ -1,34 +1,89 @@
-import React, { useContext } from 'react'
-import { doctors } from '../assets/assets'
-import { useNavigate } from 'react-router-dom'
-import { AppContext } from '../context/AppContext'
+import React, { useContext } from "react";
+import { useNavigate } from "react-router-dom";
+import { AppContext } from "../context/AppContext";
 
 const TopDoctors = () => {
-  
-  const navigate = useNavigate()
-  const {doctors} = useContext(AppContext)
+  const navigate = useNavigate();
+  const { doctors } = useContext(AppContext);
 
   return (
-    <div className='flex flex-col items-center gap-4 my-16 text-gray-900 md:mx-10'>
-      <h1 className='text-3xl font-medium '>Top Doctors to Book</h1>
-      <p className='sm:w-1/3 text-center text-sm'>Simply browse though our extensive list of trusted doctors.</p>
-      <div className='w-full grid grid-cols-auto gap-4 pt-5 gap-y-6 px-3 sm:px-0'>
-        {doctors.slice(0,10).map((item,index)=>(
-         <div onClick={()=>{navigate(`/appointment/${item._id}`); scrollTo(0,0)}}   className='border border-blue-200 rounded-xl overflow-hidden cursor-pointer hover:translate-y-[-10px] transition-all duration-500' key={index}>
-          <img className='bg-blue-50' src={item.image} alt="" />
-          <div className='p-4' >
-            <div className='flex items-center gap-2 text-sm text-center text-green-500'>
-              <p className='w-2 h-2 bg-green-500 rounded-full'></p><p>Available</p>
+    <section className="relative my-6 px-4 md:px-10">
+      {/* Background glow */}
+      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-customPrimary/5 to-transparent blur-3xl" />
+
+      {/* Heading */}
+      <div className="text-center mb-12">
+        <h1 className="text-4xl font-bold text-gray-800">
+          Top Doctors <span className="text-customPrimary">to Book</span>
+        </h1>
+        <p className="mt-3 text-sm text-gray-500 max-w-xl mx-auto">
+          Hand-picked professionals trusted by thousands of patients.
+        </p>
+      </div>
+
+      {/* Cards */}
+      <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        {doctors.slice(0, 10).map((item, index) => (
+          <div
+            key={index}
+            onClick={() => {
+              navigate(`/appointment/${item._id}`);
+              window.scrollTo(0, 0);
+            }}
+            className="group bg-white rounded-2xl overflow-hidden cursor-pointer shadow-md hover:shadow-2xl hover:-translate-y-3 transition-all duration-300"
+          >
+            {/* Image */}
+            <div className="relative overflow-hidden">
+              <img
+                src={item.image}
+                alt={item.name}
+                className="w-full h-56 object-cover group-hover:scale-110 transition duration-500"
+              />
+
+              {/* Availability badge */}
+              <span
+                className={`absolute top-3 left-3 px-3 py-1 text-xs rounded-full backdrop-blur-md ${
+                  item.available
+                    ? "bg-green-100 text-green-700"
+                    : "bg-gray-200 text-gray-600"
+                }`}
+              >
+                {item.available ? "Available" : "Unavailable"}
+              </span>
             </div>
-            <p className='text-gray-500 text-lg font-medium' >{item.name}</p>
-            <p className='text-gray-600 text-sm' >{item.speciality}</p>
+
+            {/* Content */}
+            <div className="p-5">
+              <h3 className="text-lg font-semibold text-gray-800 group-hover:text-customPrimary transition">
+                {item.name}
+              </h3>
+              <p className="text-sm text-gray-500 mt-1">
+                {item.speciality}
+              </p>
+
+              {/* CTA */}
+              <button className="mt-4 w-full py-2 text-sm rounded-lg bg-customPrimary/10 text-customPrimary font-medium opacity-0 group-hover:opacity-100 transition">
+                Book Appointment →
+              </button>
+            </div>
           </div>
-         </div> 
         ))}
       </div>
-      <button onClick={()=>{navigate('/doctors'); scrollTo(0,0)}} className='bg-blue-50 text-gray-600 px-12 py-3 rounded-full mt-10' >more</button>
-    </div>
-  )
-}
 
-export default TopDoctors
+      {/* View More */}
+      <div className="flex justify-center mt-14">
+        <button
+          onClick={() => {
+            navigate("/doctors");
+            window.scrollTo(0, 0);
+          }}
+          className="px-14 py-3 rounded-full bg-customPrimary text-white text-sm font-medium hover:scale-105 transition"
+        >
+          View All Doctors
+        </button>
+      </div>
+    </section>
+  );
+};
+
+export default TopDoctors;

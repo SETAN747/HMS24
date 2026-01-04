@@ -269,183 +269,203 @@ const clearChat = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen">
-      {/* Chat messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
-        {messages.map((msg, idx) => (
-          <div
-            key={idx}
-            className={msg.type === "user" ? "text-right" : "text-left"}
-          >
-            <div
-              className={`inline-block px-4 py-2 rounded-lg ${
-                msg.type === "user"
-                  ? "bg-blue-500 text-white"
-                  : "bg-gray-200 text-gray-800"
-              }`}
-            >
-              {msg.text}
-            </div>
+  <div className="flex flex-col h-screen bg-gray-100">
 
-            {/* Doctor Card (agar AI ne doctor suggest kiya ho) */}
-            {msg.doctor && (
-              <div className="mt-3 p-4 bg-white rounded-xl shadow border inline-flex gap-4 items-start">
-                <img
-                  src={msg.doctor.image}
-                  alt={msg.doctor.name}
-                  className="w-16 h-16 rounded-full object-cover"
-                />
-                <div>
-                  <p className="font-semibold text-gray-900">
-                    Dr. {msg.doctor.name}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    {msg.doctor.degree} • {msg.doctor.speciality}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    {msg.doctor.experience}
-                  </p>
-                  <p className="text-sm text-gray-800 font-semibold mt-1">
-                    Fees: ₹{msg.doctor.fees}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {msg.doctor?.address?.line1}, {msg.doctor?.address?.line2}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Slots from AI */}
-            {msg.availableSlots && (
-              <div className="mt-4">
-                <p className="text-sm font-medium text-gray-700">
-                  Booking slots
-                </p>
-
-                {/* Date strip */}
-                <div className="flex gap-2 overflow-x-auto mt-2">
-                  {msg.availableSlots
-                    .map((daySlots, dayIdx) => ({ daySlots, dayIdx }))
-                    .filter(({ daySlots }) => daySlots.length > 0) // empty days skip
-                    .map(({ daySlots, dayIdx }) => {
-                      const active =
-                        (picks[msg.docId]?.dayIndex ?? 0) === dayIdx;
-                      return (
-                        <button
-                          key={dayIdx}
-                          onClick={() =>
-                            setPicks((prev) => ({
-                              ...prev,
-                              [msg.docId]: {
-                                dayIndex: dayIdx,
-                                dateKey: "",
-                                time: "",
-                              },
-                            }))
-                          }
-                          className={`px-3 py-2 rounded-full text-sm whitespace-nowrap ${
-                            active
-                              ? "bg-blue-500 text-white"
-                              : "border border-gray-300 text-gray-700"
-                          }`}
-                        >
-                          {daySlots[0].weekday} {daySlots[0].dayNum}
-                        </button>
-                      );
-                    })}
-                </div>
-
-                {/* Time chips */}
-                <div className="flex gap-2 overflow-x-auto mt-3 sm:grid sm:grid-cols-6 sm:gap-3">
-                  {(() => {
-                    const selDayIndex = picks[msg.docId]?.dayIndex ?? 0;
-                    const daySlots = msg.availableSlots[selDayIndex] || [];
-                    return daySlots.map((slot, i) => {
-                      const active =
-                        picks[msg.docId]?.time === slot.time &&
-                        picks[msg.docId]?.dateKey === slot.dateKey;
-                      return (
-                        <button
-                          key={i}
-                          onClick={() =>
-                            setPicks((prev) => ({
-                              ...prev,
-                              [msg.docId]: {
-                                dayIndex: selDayIndex,
-                                dateKey: slot.dateKey,
-                                time: slot.time,
-                              },
-                            }))
-                          }
-                          className={`px-4 py-2 rounded-full text-sm whitespace-nowrap ${
-                            active
-                              ? "bg-blue-500 text-white"
-                              : "border border-gray-300 text-gray-700"
-                          }`}
-                        >
-                          {slot.time.toLowerCase()}
-                        </button>
-                      );
-                    });
-                  })()}
-                </div>
-
-                {/* Book button */}
-                <button
-                  onClick={() => bookSlot(msg.docId)}
-                  disabled={
-                    !picks[msg.docId]?.dateKey ||
-                    !picks[msg.docId]?.time ||
-                    booking
-                  }
-                  className={`mt-4 w-full py-2 rounded-full text-sm ${
-                    !picks[msg.docId]?.dateKey ||
-                    !picks[msg.docId]?.time ||
-                    booking
-                      ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                      : "bg-blue-500 text-white"
-                  }`}
-                >
-                  {booking ? "Booking..." : "Book Appointment"}
-                </button>
-
-                {/* No slots fallback */}
-                {msg.availableSlots.every((d) => d.length === 0) && (
-                  <p className="text-xs text-red-500 mt-2">
-                    No available slots in the next 7 days.
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-        ))}
-        {loading && <p className="text-sm text-gray-500">Thinking...</p>}
+    {/* Header */}
+    <div className="sticky top-0 z-10 bg-white border-b px-6 py-4 flex items-center justify-between">
+      <div>
+        <h2 className="text-lg font-semibold text-gray-800">
+          Prescripto AI
+        </h2>
+        <p className="text-xs text-gray-500">
+          Smart healthcare assistant
+        </p>
       </div>
-
-      {/* Input area */}
-      <div className="p-3 border-t flex gap-2  bg-white sticky bottom-0 ">
-        <input
-          type="text"
-          className="flex-1 border rounded-full px-4 py-2"
-          placeholder="Ask about an appointment..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-        />
-        <button
-          onClick={handleSend}
-          className="bg-blue-500 text-white px-5 py-2 rounded-full font-medium"
-        >
-          Send
-        </button> 
-         <button
-          onClick={clearChat}
-          className="bg-red-500 text-white px-4 py-2 rounded-full font-medium"
-        >
-          Clear
-        </button>
-      </div>
+      <button
+        onClick={clearChat}
+        className="text-sm text-red-500 hover:underline"
+      >
+        Clear chat
+      </button>
     </div>
-  );
+
+    {/* Messages */}
+    <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4">
+
+      {messages.map((msg, idx) => (
+        <div
+          key={idx}
+          className={`flex ${
+            msg.type === "user" ? "justify-end" : "justify-start"
+          }`}
+        >
+          <div
+            className={`max-w-[75%] px-5 py-3 rounded-2xl text-sm leading-relaxed shadow-sm ${
+              msg.type === "user"
+                ? "bg-customPrimary text-white rounded-br-sm"
+                : "bg-white text-gray-800 rounded-bl-sm"
+            }`}
+          >
+            {msg.text}
+          </div>
+        </div>
+      ))}
+
+      {/* Doctor card */}
+      {messages.map(
+        (msg, idx) =>
+          msg.doctor && (
+            <div
+              key={`doc-${idx}`}
+              className="bg-white rounded-2xl shadow border p-5 flex gap-4"
+            >
+              <img
+                src={msg.doctor.image}
+                alt={msg.doctor.name}
+                className="w-20 h-20 rounded-xl object-cover"
+              />
+              <div className="flex-1">
+                <h3 className="font-semibold text-gray-900">
+                  Dr. {msg.doctor.name}
+                </h3>
+                <p className="text-sm text-gray-600">
+                  {msg.doctor.degree} • {msg.doctor.speciality}
+                </p>
+                <p className="text-sm text-gray-500">
+                  {msg.doctor.experience}
+                </p>
+                <p className="mt-1 text-sm font-medium text-gray-800">
+                  Fees: ₹{msg.doctor.fees}
+                </p>
+              </div>
+            </div>
+          )
+      )}
+
+      {/* Slots */}
+      {messages.map(
+        (msg, idx) =>
+          msg.availableSlots && (
+            <div
+              key={`slots-${idx}`}
+              className="bg-white rounded-2xl shadow border p-5 space-y-4"
+            >
+              <p className="text-sm font-semibold text-gray-800">
+                Available slots
+              </p>
+
+              {/* Dates */}
+              <div className="flex gap-2 overflow-x-auto">
+                {msg.availableSlots
+                  .map((d, i) => ({ d, i }))
+                  .filter(({ d }) => d.length > 0)
+                  .map(({ d, i }) => {
+                    const active =
+                      picks[msg.docId]?.dayIndex === i;
+                    return (
+                      <button
+                        key={i}
+                        onClick={() =>
+                          setPicks((prev) => ({
+                            ...prev,
+                            [msg.docId]: {
+                              dayIndex: i,
+                              dateKey: "",
+                              time: "",
+                            },
+                          }))
+                        }
+                        className={`px-4 py-2 rounded-full text-xs font-medium ${
+                          active
+                            ? "bg-customPrimary text-white"
+                            : "border text-gray-600"
+                        }`}
+                      >
+                        {d[0].weekday} {d[0].dayNum}
+                      </button>
+                    );
+                  })}
+              </div>
+
+              {/* Times */}
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                {(msg.availableSlots[picks[msg.docId]?.dayIndex ?? 0] ||
+                  []).map((slot, i) => {
+                  const active =
+                    picks[msg.docId]?.time === slot.time;
+                  return (
+                    <button
+                      key={i}
+                      onClick={() =>
+                        setPicks((prev) => ({
+                          ...prev,
+                          [msg.docId]: {
+                            dayIndex:
+                              picks[msg.docId]?.dayIndex ?? 0,
+                            dateKey: slot.dateKey,
+                            time: slot.time,
+                          },
+                        }))
+                      }
+                      className={`px-3 py-2 rounded-full text-xs ${
+                        active
+                          ? "bg-customPrimary text-white"
+                          : "border text-gray-600"
+                      }`}
+                    >
+                      {slot.time.toLowerCase()}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                onClick={() => bookSlot(msg.docId)}
+                disabled={
+                  !picks[msg.docId]?.dateKey ||
+                  !picks[msg.docId]?.time ||
+                  booking
+                }
+                className={`w-full py-3 rounded-full text-sm font-medium ${
+                  booking ||
+                  !picks[msg.docId]?.dateKey ||
+                  !picks[msg.docId]?.time
+                    ? "bg-gray-300 text-gray-600"
+                    : "bg-customPrimary text-white"
+                }`}
+              >
+                {booking ? "Booking..." : "Book Appointment"}
+              </button>
+            </div>
+          )
+      )}
+
+      {loading && (
+        <p className="text-xs text-gray-500 italic">
+          Prescripto AI is thinking...
+        </p>
+      )}
+    </div>
+
+    {/* Input */}
+    <div className="sticky bottom-0 bg-white border-t p-4 flex gap-3">
+      <input
+        type="text"
+        className="flex-1 border rounded-full px-5 py-3 text-sm focus:outline-none"
+        placeholder="Describe symptoms or ask a question..."
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+      />
+      <button
+        onClick={handleSend}
+        className="bg-customPrimary text-white px-6 py-3 rounded-full text-sm font-medium"
+      >
+        Send
+      </button>
+    </div>
+  </div>
+);
+
 };
 
 export default PrescriptoAIChat;
