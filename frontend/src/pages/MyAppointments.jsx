@@ -112,8 +112,10 @@ const MyAppointments = () => {
         { headers: { token } }
       );
 
-      if (data.success) {
+      if (data.success) { 
+        console.log("init has about to called now")
         initPay(data.order);
+         console.log("init has been called ")
       } else {
         toast.error(data?.message);
       }

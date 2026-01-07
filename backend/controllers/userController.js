@@ -555,9 +555,11 @@ const paymentRazorpay = async (req, res) => {
       currency: process.env.CURRENCY,
       receipt: appointmentId,
     };
-
+    
+     console.log("options: ",options)
     //creating of an order
     const order = await razorpayInstance.orders.create(options);
+   
 
     res.json({ success: true, order });
   } catch (error) {
