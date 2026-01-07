@@ -18,7 +18,7 @@ const authUser = async (req, res, next) => {
       if (!user || !user.activeSession.sessionId) {
       return res.json({ success: false, message: "Session missing, login again" });
     }  
-      const currentIp = req.headers["x-forwarded-for"] || req.socket.remoteAddress || req.ip; 
+      const currentIp = req.headers["x-forwarded-for"]?.split(",")[0] || req.socket.remoteAddress || req.ip; 
 
       if (user.activeSession.ipAddress !== currentIp) {
       // clear session
@@ -43,7 +43,11 @@ const authUser = async (req, res, next) => {
         userAgent: null
       };
       await user.save();
-      res.clearCookie("token");
+      res.clearCookie("token",{
+  httpOnly: true,
+  secure: true,
+  sameSite: "none",
+});
       return res.json({ success: false, message: "Session expired" });
     }  
 
