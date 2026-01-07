@@ -276,7 +276,7 @@ const loginUser = async (req, res) => {
        const clientIp = req.headers["x-forwarded-for"]?.split(",")[0] || req.socket.remoteAddress || req.ip;
     const userAgent = req.headers["user-agent"]; 
 
-     const sessionData = generateOrUpdateSession(user, clientIp, userAgent); 
+      generateOrUpdateSession(user, clientIp, userAgent); 
 
       await user.save();
 
