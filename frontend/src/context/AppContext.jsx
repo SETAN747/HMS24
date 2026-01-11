@@ -69,8 +69,9 @@ const AppContextProvider = (props) => {
 
     setUserData(null);
     setToken(null);
-
-    localStorage.removeItem("token"); // if any fallback 
+    
+    localStorage.removeItem("token"); // if any fallback
+    console.log("token removed from local storage") 
      navigate("/login");
      toast.success("Logged out successfully");
   } catch (err) {

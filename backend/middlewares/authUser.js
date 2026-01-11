@@ -20,19 +20,7 @@ const authUser = async (req, res, next) => {
     }  
       const currentIp = req.headers["x-forwarded-for"]?.split(",")[0] || req.socket.remoteAddress || req.ip; 
 
-      if (user.activeSession.ipAddress !== currentIp) {
-      // clear session
-      user.activeSession = {
-        sessionId: null,
-        ipAddress: null,
-        createdAt: null,
-        expiresAt: null,
-        userAgent: null
-      };
-      await user.save();
-      res.clearCookie("token");
-      return res.json({ success: false, message: "IP changed. Session blocked. Login again" });
-    }  
+       
 
      if (new Date() > new Date(user.activeSession.expiresAt)) {
       user.activeSession = {
