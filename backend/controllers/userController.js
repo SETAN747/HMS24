@@ -463,7 +463,7 @@ const bookAppointment = async (req, res) => {
     io.to(appointmentData.userId).emit("new-notification", notification);
     io.to(appointmentData.docId).emit("new-notification", notification);
 
-    res.json({ success: true, message: "Appointment Booked" });
+    res.json({ success: true, message: "Appointment Booked" , appointmentId: newAppointment._id, });
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });

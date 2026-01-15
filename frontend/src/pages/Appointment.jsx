@@ -23,7 +23,63 @@ const Appointment = () => {
     const docInfo = doctors.find((doc) => doc._id === docId);
     setDocInfo(docInfo);
     console.log(docInfo);
+  };  
+
+  // handle razorpay payment
+  const initPay = (order) => {
+    const options = {
+      key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+      amount: order.amount,
+      currency: order.currency,
+      name: "Appointment payment",
+      description: "Appointment Payment",
+      order_id: order.id,
+      receipt: order.receipt,
+      handler: async (response) => {
+        try {
+          const { data } = await axios.post(
+            backendUrl + "/api/user/verify-razorpay",
+            response,
+            { headers: { token } }
+          );
+          if (data.success) {
+            // getUserAppointments();
+            navigate("/my-appointments");
+          }
+        } catch (error) {
+          console.log("error:", error);
+          toast.error(error.message);
+        }
+      },
+    };
+
+    const rzp = new window.Razorpay(options);
+
+    rzp.open();
   };
+
+
+  // handle razorpay payment
+    const appointmentRazorpay = async (appointmentId) => {
+      try {
+        const { data } = await axios.post(
+          backendUrl + "/api/user/payment-razorpay",
+          { appointmentId },
+          { headers: { token } }
+        );
+  
+        if (data.success) { 
+          console.log("init has about to called now")
+          initPay(data.order);
+           console.log("init has been called ")
+        } else {
+          toast.error(data?.message);
+        }
+      } catch (error) {
+        console.log("error:", error);
+        toast.error(error.message);
+      }
+    };
 
   const bookAppointment = async (formData) => {
     if (!token) {
@@ -46,7 +102,10 @@ const Appointment = () => {
         { headers: { token } }
       );
       if (data.success) {
-        toast.success(data.message);
+        toast.success(data.message); 
+        console.log("🆔 Appointment ID:", data.appointmentId);
+        appointmentRazorpay(data.appointmentId)
+        
         getDoctorsData();
         navigate("/my-appointments");
       } else {
