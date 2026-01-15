@@ -254,8 +254,10 @@ const verifyAppointmentByCode = async (req, res) => {
 
     appt.isVerified = true;
     appt.verifiedAt = new Date();
+    appt.appointmentStatus = "checked_in"
     appt.verifiedBy = doctorId;
     appt.verificationCode = undefined; // remove code after use (optional)
+   
     await appt.save();
 
     return res.json({
@@ -294,7 +296,7 @@ const appointmentComplete = async (req, res) => {
 
     if (appointmentData && appointmentData.docId === docId) {
       await appointmentModel.findByIdAndUpdate(appointmentId, {
-        isCompleted: true,
+        isCompleted: true, appointmentStatus : "completed" ,
       });
 
       return res.json({ success: true, message: "Appointment Completed" });
@@ -317,7 +319,7 @@ const appointmentCancel = async (req, res) => {
 
     if (appointmentData && appointmentData.docId === docId) {
       await appointmentModel.findByIdAndUpdate(appointmentId, {
-        cancelled: true,
+        cancelled: true, appointmentStatus : "cancelled_by_doctor",
       });
       return res.json({ success: true, message: "Appointment Cancelled" });
     } else {

@@ -120,10 +120,10 @@ const DoctorAppointments = () => {
                 <div className="flex items-center gap-2">
                   <img
                     className="w-8 h-8 rounded-full object-cover"
-                    src={item.userData.image}
+                    src={item.userData?.image}
                     alt="patient"
                   />
-                  <p className="truncate">{item.userData.name}</p>
+                  <p className="truncate">{item.patientDetails?.patientName}</p>
                 </div>
 
                 {/* Payment */}
@@ -135,7 +135,7 @@ const DoctorAppointments = () => {
 
                 {/* Age */}
                 <p className="max-sm:hidden">
-                  {calculateAge(item.userData.dob)}
+                  {item.patientDetails?.age}
                 </p>
 
                 {/* Date & Time */}

@@ -497,7 +497,7 @@ const cancelAppointment = async (req, res) => {
     }
 
     await appointmentModel.findByIdAndUpdate(appointmentId, {
-      cancelled: true,
+      cancelled: true, appointmentStatus : "cancelled_by_user",
     });
 
     // releasing doctor slot

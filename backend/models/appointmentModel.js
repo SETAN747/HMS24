@@ -3,6 +3,23 @@ import mongoose from "mongoose";
 const appointmentSchema = new mongoose.Schema({
   appointmentToken: { type: String, required: true, unique: true },
   tokenSeq: { type: Number }, // sequence number for that doc+slotDate
+  appointmentStatus: {
+    type: String,
+    enum: [
+      "no_show", // on booking
+      "checked_in", // on verification
+      "in_consultation", // 
+      "completed", // on completed
+      "cancelled_by_user", // 
+      "cancelled_by_doctor", //
+    ],
+    default: "no_show",
+  },
+  appointmentPriority: {
+    type: String,
+    enum: ["normal", "high", "urgent", "emergency"],
+    default: "normal",
+  },
   userId: { type: String, required: true },
   docId: { type: String, required: true },
   slotDate: { type: String, required: true },
