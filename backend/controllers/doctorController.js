@@ -122,7 +122,7 @@ const changeAvailability = async (req, res) => {
     const { docId } = req.body;
     const docData = await doctorModel.findById(docId);
     await doctorModel.findByIdAndUpdate(docId, {
-      available: !docData.available,
+      available: !docData.available, availability,     
     });
     res.json({ success: true, message: "Availability changed" });
   } catch (error) {
@@ -462,14 +462,14 @@ const doctorProfile = async (req, res) => {
 // API to update doctor profile data from Doctor panel
 const updateDoctorProfile = async (req, res) => {
   try {
-    const { fees, address, available } = req.body;
+    const { fees, address, available,availability, } = req.body;
     const docId = req.docId;
-    console.log(docId, fees, address, available);
+    console.log(docId, fees, address, available,availability, );
 
     if (!docId)
       return res.json({ success: false, message: "Doctor ID missing" });
 
-    await doctorModel.findByIdAndUpdate(docId, { fees, address, available });
+    await doctorModel.findByIdAndUpdate(docId, { fees, address, available,availability, });
 
     res.json({ success: true, message: "Profile Updated" });
   } catch (error) {
