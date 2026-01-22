@@ -7,7 +7,9 @@ import WeeklyBarChart from "../../components/Dashboard/Charts/WeeklyBarChart";
 import StatusDoughnut from "../../components/Dashboard/Charts/StatusDoughnut";
 import NotificationsTable from "../../components/Dashboard/NotificationsTable";
 import RatingBadge from "../../components/Dashboard/RatingBadge"; 
-import {getSocket} from "../../services/socket"
+import {getSocket} from "../../services/socket" 
+import { FaMoneyBillWave, FaCalendarCheck, FaUsers } from "react-icons/fa";
+
 
 const DoctorDashboard = () => {
   const {
@@ -112,20 +114,20 @@ const DoctorDashboard = () => {
         {/* top stats */}
         <div className="flex gap-4">
           <StatCard
-            icon={assets.earning_icon}
+            icon={<FaMoneyBillWave/>}
             label="Earnings"
             value={dashData?.today?.earnings || 0}
             subtitle="Today's revenue"
           />
           <StatCard
-            icon={assets.appointments_icon}
+            icon={<FaCalendarCheck/>}
             label="Appointments"
             value={dashData?.today?.appointments || 0}
             subtitle="Today's bookings"
             change={dashData?.today?.compareToLastWeek || 1} 
           />
           <StatCard
-            icon={assets.patients_icon}
+            icon={<FaUsers/>}
             label="Patients"
             value={dashData?.today?.patients || 0}
             subtitle="Today's Unique patients"

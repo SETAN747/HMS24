@@ -13,6 +13,21 @@ const Appointment = () => {
     useContext(AppContext);
   const daysOfWeek = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
+  const dayKeyMap = [
+    "sunday",
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+  ];
+
+  const timeToMinutes = (time) => {
+    const [h, m] = time.split(":").map(Number);
+    return h * 60 + m;
+  };
+
   const navigate = useNavigate();
 
   const [docInfo, setDocInfo] = useState(null);
@@ -23,7 +38,7 @@ const Appointment = () => {
     const docInfo = doctors.find((doc) => doc._id === docId);
     setDocInfo(docInfo);
     console.log(docInfo);
-  };  
+  };
 
   // handle razorpay payment
   const initPay = (order) => {
@@ -40,7 +55,7 @@ const Appointment = () => {
           const { data } = await axios.post(
             backendUrl + "/api/user/verify-razorpay",
             response,
-            { headers: { token } }
+            { headers: { token } },
           );
           if (data.success) {
             // getUserAppointments();
@@ -58,28 +73,27 @@ const Appointment = () => {
     rzp.open();
   };
 
-
   // handle razorpay payment
-    const appointmentRazorpay = async (appointmentId) => {
-      try {
-        const { data } = await axios.post(
-          backendUrl + "/api/user/payment-razorpay",
-          { appointmentId },
-          { headers: { token } }
-        );
-  
-        if (data.success) { 
-          console.log("init has about to called now")
-          initPay(data.order);
-           console.log("init has been called ")
-        } else {
-          toast.error(data?.message);
-        }
-      } catch (error) {
-        console.log("error:", error);
-        toast.error(error.message);
+  const appointmentRazorpay = async (appointmentId) => {
+    try {
+      const { data } = await axios.post(
+        backendUrl + "/api/user/payment-razorpay",
+        { appointmentId },
+        { headers: { token } },
+      );
+
+      if (data.success) {
+        console.log("init has about to called now");
+        initPay(data.order);
+        console.log("init has been called ");
+      } else {
+        toast.error(data?.message);
       }
-    };
+    } catch (error) {
+      console.log("error:", error);
+      toast.error(error.message);
+    }
+  };
 
   const bookAppointment = async (formData) => {
     if (!token) {
@@ -99,13 +113,13 @@ const Appointment = () => {
       const { data } = await axios.post(
         backendUrl + "/api/user/book-appointment",
         { docId, slotDate, slotTime, patientDetails: formData },
-        { headers: { token } }
+        { headers: { token } },
       );
       if (data.success) {
-        toast.success(data.message); 
+        toast.success(data.message);
         console.log("🆔 Appointment ID:", data.appointmentId);
-        appointmentRazorpay(data.appointmentId)
-        
+        appointmentRazorpay(data.appointmentId);
+
         getDoctorsData();
         navigate("/my-appointments");
       } else {
@@ -115,6 +129,49 @@ const Appointment = () => {
       console.log(error);
       toast.error(error.message);
     }
+  };
+
+  const getFirstValidSlotTime = (daySlots, dateObj) => {
+    if (!docInfo?.availability?.enabled) return "";
+
+    const dayKey = dayKeyMap[dateObj.getDay()];
+    const schedules = docInfo.availability.weeklySchedule?.[dayKey] || [];
+
+    if (!schedules.length) return "";
+
+    const slotDuration = docInfo.availability.slotDuration;
+
+    for (let schedule of schedules) {
+      let startMin = timeToMinutes(schedule.start);
+      let endMin = timeToMinutes(schedule.end);
+
+      // overnight shift handle (07:00 → 06:00)
+      if (endMin <= startMin) endMin += 24 * 60;
+
+      for (let m = startMin; m < endMin; m += slotDuration) {
+        const slotDateTime = new Date(dateObj);
+        slotDateTime.setHours(Math.floor(m / 60), m % 60, 0, 0);
+
+        const formattedTime = slotDateTime.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+
+        const d = slotDateTime.getDate();
+        const mo = slotDateTime.getMonth() + 1;
+        const y = slotDateTime.getFullYear();
+        const slotDateKey = `${d}_${mo}_${y}`;
+
+        const isBooked =
+          docInfo.slots_booked?.[slotDateKey]?.includes(formattedTime);
+
+        if (!isBooked) {
+          return formattedTime; // ✅ FIRST VALID SLOT
+        }
+      }
+    }
+
+    return "";
   };
 
   useEffect(() => {
@@ -213,98 +270,114 @@ const Appointment = () => {
       docSlots[slotIndex] &&
       docSlots[slotIndex].length > 0
     ) {
-      // Automatically set first available time for selected date
-      setSlotTime(docSlots[slotIndex][0].time);
-    } else {
-      setSlotTime(""); // reset if no slots
-    }
-  }, [slotIndex, docSlots]);
+      const dateObj = docSlots[slotIndex][0].datetime;
 
-  
+      const firstValidTime = getFirstValidSlotTime(
+        docSlots[slotIndex],
+        dateObj,
+      );
+
+      setSlotTime(firstValidTime);
+    } else {
+      setSlotTime("");
+    }
+  }, [slotIndex, docSlots, docInfo]);
 
   return (
     docInfo && (
       <div>
         {/* ...... Doctor Details ...... */}
-         <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-8">
-        
-        {/* Doctor Image */}
-        <div className="relative">
-          <img
-            src={docInfo.image}
-            alt=""
-            className="rounded-3xl w-full h-[360px] object-cover shadow-xl bg-customPrimary/10"
-          />
-          <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur px-4 py-2 rounded-xl shadow">
-            <p className="text-sm font-semibold text-gray-800">
-              {currencySymbol}{docInfo.fees}
+        <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-8">
+          {/* Doctor Image */}
+          <div className="relative">
+            <img
+              src={docInfo.image}
+              alt=""
+              className="rounded-3xl w-full h-[360px] object-cover shadow-xl bg-customPrimary/10"
+            />
+            <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur px-4 py-2 rounded-xl shadow">
+              <p className="text-sm font-semibold text-gray-800">
+                {currencySymbol}
+                {docInfo.fees}
+              </p>
+              <p className="text-xs text-gray-500">Consultation Fee</p>
+            </div>
+          </div>
+
+          {/* Doctor Info */}
+          <div className="bg-white rounded-3xl shadow-xl border p-8">
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-semibold text-gray-900">
+                {docInfo.name}
+              </h1>
+              <img src={assets.verified_icon} className="w-5" alt="" />
+            </div>
+
+            <p className="text-indigo-600 mt-1">
+              {docInfo.degree} · {docInfo.speciality}
             </p>
-            <p className="text-xs text-gray-500">Consultation Fee</p>
+
+            <span className="inline-block mt-2 px-3 py-1 text-xs rounded-full border bg-indigo-50 text-indigo-700">
+              {docInfo.experience}
+            </span>
+
+            {/* About */}
+            <div className="mt-6">
+              <p className="flex items-center gap-2 font-medium text-gray-900">
+                About
+                <img src={assets.info_icon} className="w-4" alt="" />
+              </p>
+              <p className="text-sm text-gray-500 mt-2 leading-relaxed">
+                {docInfo.about}
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Doctor Info */}
-        <div className="bg-white rounded-3xl shadow-xl border p-8">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-semibold text-gray-900">
-              {docInfo.name}
-            </h1>
-            <img src={assets.verified_icon} className="w-5" alt="" />
+        {/* Booking Slots */}
+        <div className="mt-12">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">
+            Select Appointment Slot
+          </h2>
+
+          {/* Days */}
+          <div className="flex gap-4 overflow-x-auto pb-2">
+            {docSlots.length &&
+              docSlots.map((item, index) => {
+                const jsDayIndex = item[0]?.datetime.getDay(); // 0–6
+                const dayKey = dayKeyMap[jsDayIndex]; // sunday, monday...
+
+                const isDayEnabled =
+                  docInfo?.availability?.enabled &&
+                  docInfo?.availability?.weeklySchedule?.[dayKey]?.length > 0;
+
+                return (
+                  <div
+                    key={index}
+                    onClick={() => isDayEnabled && setSlotIndex(index)}
+                    className={`min-w-[90px] p-4 rounded-2xl text-center transition-all
+            ${
+              !isDayEnabled
+                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                : slotIndex === index
+                  ? "bg-customPrimary text-white shadow-lg scale-105 cursor-pointer"
+                  : "bg-white border hover:border-indigo-400 cursor-pointer"
+            }`}
+                  >
+                    <p className="text-xs">
+                      {item[0] && daysOfWeek[jsDayIndex]}
+                    </p>
+                    <p className="text-lg font-semibold">
+                      {item[0] ? item[0].datetime.getDate() : "--"}
+                    </p>
+                  </div>
+                );
+              })}
           </div>
 
-          <p className="text-indigo-600 mt-1">
-            {docInfo.degree} · {docInfo.speciality}
-          </p>
-
-          <span className="inline-block mt-2 px-3 py-1 text-xs rounded-full border bg-indigo-50 text-indigo-700">
-            {docInfo.experience}
-          </span>
-
-          {/* About */}
-          <div className="mt-6">
-            <p className="flex items-center gap-2 font-medium text-gray-900">
-              About
-              <img src={assets.info_icon} className="w-4" alt="" />
-            </p>
-            <p className="text-sm text-gray-500 mt-2 leading-relaxed">
-              {docInfo.about}
-            </p>
-          </div>
-        </div>
-      </div>
-
-               {/* Booking Slots */}
-      <div className="mt-12">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">
-          Select Appointment Slot
-        </h2>
-
-        {/* Days */}
-        <div className="flex gap-4 overflow-x-auto pb-2">
-          {docSlots.length &&
-            docSlots.map((item, index) => (
-              <div
-                key={index}
-                onClick={() => setSlotIndex(index)}
-                className={`min-w-[90px] p-4 rounded-2xl text-center cursor-pointer transition-all ${
-                  slotIndex === index
-                    ? "bg-customPrimary text-white shadow-lg scale-105"
-                    : "bg-white border hover:border-indigo-400"
-                }`}
-              >
-                <p className="text-xs">
-                  {item[0] && daysOfWeek[item[0].datetime.getDay()]}
-                </p>
-                <p className="text-lg font-semibold">
-                  {item[0] && item[0].datetime.getDate()}
-                </p>
-              </div>
-            ))}
-        </div>
-
-        {/* Time Slots */}
-        <div className="flex gap-3 overflow-x-auto mt-6 pb-2">
-          {/* {docSlots.length &&
+          {/* Time Slots */}
+          <div className="flex gap-3 overflow-x-auto mt-6 pb-2">
+            {/* {docSlots.length &&
             docSlots[slotIndex]?.map((item, index) => (
               <button
                 key={index}
@@ -318,25 +391,24 @@ const Appointment = () => {
                 {item.time.toLowerCase()}
               </button>
             ))} */}
+          </div>
+
+          {/* CTA */}
+          <div className="mt-8">
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="bg-customPrimary hover:bg-indigo-700 text-white px-10 py-4 rounded-full shadow-xl transition-all"
+            >
+              Book Appointment
+            </button>
+          </div>
+
+          <AppointmentFormModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onSubmit={bookAppointment}
+          />
         </div>
-
-        {/* CTA */}
-        <div className="mt-8">
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="bg-customPrimary hover:bg-indigo-700 text-white px-10 py-4 rounded-full shadow-xl transition-all"
-          >
-            Book Appointment
-          </button>
-        </div>
-
-        <AppointmentFormModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          onSubmit={bookAppointment}
-        />
-      </div>
-
 
         {/* Listing Related Doctors */}
         <RelatedDoctors docId={docId} speciality={docInfo.speciality} />

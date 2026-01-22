@@ -31,15 +31,15 @@ const StatusDoughnut = ({ counts }) => {
         counts.refunded || 9,
       ],
       backgroundColor: [
-        "#FFC107", // Pending - yellow
-        "#2196F3", // Confirmed (Paid) - blue
-        "#9C27B0", // Checked In - purple
-        "#00BCD4", // In Consultation - cyan
-        "#4CAF50", // Completed - green
-        "#9E9E9E", // No Show - grey
-        "#F44336", // Cancelled by User - red
-        "#E91E63", // Cancelled by Doctor - pink
-        "#FF9800", // Refunded - orange
+        "#EEF2FF", // indigo-50
+  "#E0E7FF", // indigo-100
+  "#C7D2FE", // indigo-200
+  "#A5B4FC", // indigo-300
+  "#818CF8", // indigo-400
+  "#6366F1", // indigo-500
+  "#4F46E5", // indigo-600
+  "#4338CA", // indigo-700
+  "#3730A3", // indigo-800
       ],
       borderWidth: 2,
       borderColor: "#fff",

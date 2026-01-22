@@ -9,11 +9,11 @@ import reviewModel from "../models/reviewModel.js";
 import notificationModel from "../models/notificationModel.js";
 import Counter from "../models/counter.js";
 import razorpayInstance from "../config/razorpay.js";
-import genAI from "../config/gemini.js";
 import { getIO } from "../config/socket.io.js";
 import SignupOtp from "../models/SignupOtp.js";
 import { sendMail } from "../config/mailer.js";
 import { v4 as uuidv4 } from "uuid";
+import ai from "../config/gemini.js";
 
 
 // ✅ Helper: Generate JWT Token
@@ -616,7 +616,7 @@ const getDoctorSuggestions = async (req, res) => {
       return res.status(400).json({ error: "Symptoms / text are required" });
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    // const model = ai.getGenerativeModel({ model: "gemini-2.0-flash" });
 
     // 1) CLASSIFIER — decide whether input is greeting / general question / symptom
     const classifyPrompt = `
@@ -630,10 +630,20 @@ Return ONLY one of these words (no explanation).
 
 User text: """${symptoms}"""
 `;
-    const classifyResult = await model.generateContent(classifyPrompt);
-    const classifyToken = (classifyResult.response.text() || "")
-      .trim()
-      .toUpperCase();
+    const classifyResult = await ai.models.generateContent({
+      model: "gemini-2.0-flash",
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: classifyPrompt }],
+        },
+      ],
+    });
+     
+    const classifyToken =
+  classifyResult.candidates?.[0]?.content?.parts?.[0]?.text
+    ?.trim()
+    .toUpperCase() || "SYMPTOM";
 
     // If classifier says GREETING -> return a greeting type
     if (classifyToken.includes("GREETING")) {
@@ -651,8 +661,19 @@ If the question is unrelated to human health, reply exactly: "Sorry, I can only 
 
 User question: """${symptoms}"""
 `;
-      const adviceResult = await model.generateContent(advicePrompt);
-      const adviceText = (adviceResult.response.text() || "").trim();
+       const adviceResult = await ai.models.generateContent({
+        model: "gemini-2.0-flash",
+        contents: [
+          {
+            role: "user",
+            parts: [{ text: advicePrompt }],
+          },
+        ],
+      });
+
+      const adviceText =
+        adviceResult.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ||
+        "Please consult a doctor.";
 
       return res.json({
         type: "advice",
@@ -676,8 +697,19 @@ If none of the above match, reply exactly: NO_MATCH
 
 Return one of: General physician OR Gynecologist OR Dermatologist OR Pediatricians OR Neurologist OR Gastroenterologist OR NO_MATCH.
 `;
-    const specResult = await model.generateContent(specPrompt);
-    const aiResponse = (specResult.response.text() || "").trim();
+     
+     const specResult = await ai.models.generateContent({
+      model: "gemini-2.0-flash",
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: specPrompt }],
+        },
+      ],
+    });
+
+    const aiResponse = specResult.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ||
+      "NO_MATCH";
 
     // If model says NO_MATCH -> return advice type with "sorry" message
     if (aiResponse === "NO_MATCH" || /NO_MATCH/i.test(aiResponse)) {

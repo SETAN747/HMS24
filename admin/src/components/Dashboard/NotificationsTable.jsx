@@ -1,56 +1,88 @@
 import React from "react";
 
-const NotificationsTable = ({ notifications = [], onViewAll, title = "Notifications" }) => {
+const NotificationsTable = ({
+  notifications = [],
+  onViewAll,
+  title = "Notifications",
+}) => {
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
+
   return (
-    <div className="bg-white p-5 rounded-2xl shadow-md max-h-[420px] overflow-hidden flex flex-col">
+    <div className="relative flex max-h-[440px] flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-xl">
+      
       {/* Header */}
-      <div className="flex justify-between items-center  pb-2 mb-2">
-        <h4 className="font-semibold">{title}</h4>
-        <span className="text-xs text-gray-500">
-          {notifications.filter((n) => !n.isRead).length} new
+      <div className="flex items-center justify-between border-b bg-primary px-5 py-4">
+        <h4 className="text-sm font-semibold tracking-wide text-white">
+          {title}
+        </h4>
+
+        <span
+          className={`rounded-full px-3 py-1 text-xs font-medium ${
+            unreadCount > 0
+              ? "bg-indigo-100 text-indigo-700"
+              : "bg-gray-100 text-gray-500"
+          }`}
+        >
+          {unreadCount} new
         </span>
       </div>
 
       {/* Notification List */}
-      <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
+      <div className="flex-1 space-y-2 overflow-y-auto px-3 py-3 scrollbar-thin scrollbar-thumb-indigo-200 scrollbar-track-transparent">
         {notifications.length > 0 ? (
           notifications.map((n) => (
             <div
               key={n._id}
-              className={`p-3  last:border-none cursor-pointer transition-all duration-150 hover:bg-gray-50 rounded-lg ${
+              className={`group relative rounded-xl border p-4 transition-all duration-200 hover:shadow-2xl ${
                 n.isRead
-                  ? "text-gray-500"
-                  : "text-gray-800 font-medium bg-gray-50/60"
+                  ? "border-gray-100 bg-white"
+                  : "border-indigo-100 bg-indigo-50/60"
               }`}
             >
-              <div className="flex justify-between items-center">
-                <p className="text-sm font-semibold text-gray-800 truncate">
+              {/* Unread Indicator */}
+              {!n.isRead && (
+                <span className="absolute left-0 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-indigo-500" />
+              )}
+
+              <div className="flex items-start justify-between gap-2  ">
+                <p className="truncate text-sm font-semibold text-gray-800">
                   {n.title}
                 </p>
-                {!n.isRead && (
-                  <span className="w-2 h-2 bg-blue-500 rounded-full ml-2"></span>
-                )}
+
+                <span className="text-[11px] text-gray-400 whitespace-nowrap">
+                  {new Date(n.createdAt).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
               </div>
-              <p className="text-sm text-gray-600 mt-1">{n.message.doctor}</p>
-              <p className="text-xs text-gray-400 mt-2">
-                {new Date(n.createdAt).toLocaleString()}
+
+              <p className="mt-1 line-clamp-2 text-sm text-gray-600">
+                {n.message.doctor}
+              </p>
+
+              <p className="mt-2 text-[11px] text-gray-400">
+                {new Date(n.createdAt).toLocaleDateString()}
               </p>
             </div>
           ))
         ) : (
-          <div className="p-6 text-gray-500 text-center text-sm">
+          <div className="flex h-full items-center justify-center text-sm text-gray-400">
             No new notifications
           </div>
         )}
       </div>
 
       {/* Footer */}
-      <div
+      <button
         onClick={onViewAll}
-        className="text-center py-2 text-blue-600 font-medium cursor-pointer hover:bg-gray-50 border-t mt-2 rounded-b-lg"
+        className="group flex items-center justify-center gap-2 border-t bg-primary py-3 text-sm font-medium text-white transition-all hover:bg-indigo-100"
       >
         View all
-      </div>
+        <span className="transition-transform group-hover:translate-x-1">
+          →
+        </span>
+      </button>
     </div>
   );
 };

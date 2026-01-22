@@ -9,7 +9,12 @@ const WeeklyAvailability = ({ profileData, setProfileData, isEdit }) => {
     "friday",
     "saturday",
     "sunday",
-  ];
+  ]; 
+
+  const isEndAfterStart = (start, end) => {
+  return end > start; // works for "HH:mm" format
+};
+
 
   const addSlot = (day) => {
     setProfileData((prev) => ({
@@ -27,11 +32,58 @@ const WeeklyAvailability = ({ profileData, setProfileData, isEdit }) => {
     }));
   };
 
-  const updateSlot = (day, index, field, value) => {
-    const updatedSlots = [
-      ...profileData.availability.weeklySchedule[day],
-    ];
-    updatedSlots[index][field] = value;
+  // const updateSlot = (day, index, field, value) => {
+  //   const updatedSlots = [
+  //     ...profileData.availability.weeklySchedule[day],
+  //   ];
+  //   updatedSlots[index][field] = value; 
+
+    
+
+  //   setProfileData((prev) => ({
+  //     ...prev,
+  //     availability: {
+  //       ...prev.availability,
+  //       weeklySchedule: {
+  //         ...prev.availability.weeklySchedule,
+  //         [day]: updatedSlots,
+  //       },
+  //     },
+  //   }));
+  // };
+  
+      const updateSlot = (day, index, field, value) => {
+  const updatedSlots = [
+    ...profileData.availability.weeklySchedule[day],
+  ];
+
+  const slot = { ...updatedSlots[index], [field]: value };
+
+  // ❌ validation: end must be after start
+  if (!isEndAfterStart(slot.start, slot.end)) {
+    toast?.error?.("End time must be after start time");
+    return;
+  }
+
+  updatedSlots[index] = slot;
+
+  setProfileData((prev) => ({
+    ...prev,
+    availability: {
+      ...prev.availability,
+      weeklySchedule: {
+        ...prev.availability.weeklySchedule,
+        [day]: updatedSlots,
+      },
+    },
+  }));
+};
+
+   
+  const removeSlot = (day, index) => {
+    const updatedSlots = profileData.availability.weeklySchedule[day].filter(
+      (_, i) => i !== index
+    );
 
     setProfileData((prev) => ({
       ...prev,
@@ -58,14 +110,14 @@ const WeeklyAvailability = ({ profileData, setProfileData, isEdit }) => {
         </span>
       </div>
 
-      {/* Horizontal Days */}
+      {/* Days */}
       <div className="space-y-4">
         {days.map((day) => (
           <div
             key={day}
             className="flex items-start gap-4 rounded-xl border border-gray-100 bg-gray-50 p-4"
           >
-            {/* Day Column */}
+            {/* Day */}
             <div className="w-28 shrink-0">
               <p className="capitalize text-sm font-semibold text-gray-700">
                 {day}
@@ -81,15 +133,26 @@ const WeeklyAvailability = ({ profileData, setProfileData, isEdit }) => {
               )}
             </div>
 
-            {/* Slots Horizontal Scroll */}
+            {/* Slots */}
             <div className="flex flex-1 gap-3 overflow-x-auto pb-1">
               {profileData.availability?.weeklySchedule?.[day]?.length > 0 ? (
                 profileData.availability.weeklySchedule[day].map(
                   (slot, index) => (
                     <div
                       key={index}
-                      className="min-w-[170px] rounded-lg border border-gray-200 bg-white p-3 shadow-sm"
+                      className="relative min-w-[190px] rounded-lg border border-gray-200 bg-white p-8 shadow-sm"
                     >
+                      {/* ❌ Remove Button */}
+                      {isEdit && (
+                        <button
+                          onClick={() => removeSlot(day, index)}
+                          className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full text-indigo-400 hover:text-red-500"
+                          title="Remove slot"
+                        >
+                          ✕
+                        </button>
+                      )}
+
                       {isEdit ? (
                         <>
                           <input
@@ -107,7 +170,8 @@ const WeeklyAvailability = ({ profileData, setProfileData, isEdit }) => {
 
                           <input
                             type="time"
-                            value={slot.end}
+                            value={slot.end} 
+                            min={slot.start}
                             onChange={(e) =>
                               updateSlot(day, index, "end", e.target.value)
                             }
@@ -123,9 +187,7 @@ const WeeklyAvailability = ({ profileData, setProfileData, isEdit }) => {
                   )
                 )
               ) : (
-                <p className="text-xs italic text-gray-400">
-                  No slots
-                </p>
+                <p className="text-xs italic text-gray-400">No slots</p>
               )}
             </div>
           </div>

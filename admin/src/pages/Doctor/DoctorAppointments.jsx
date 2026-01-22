@@ -4,7 +4,10 @@ import { AppContext } from "../../context/AppContext";
 import { assets } from "../../assets/assets";
 import axios from "axios";
 import { toast } from "react-toastify";
-import DoctorCall from "../../components/Doctor/DoctorCall";
+import DoctorCall from "../../components/Doctor/DoctorCall"; 
+import { FaCalendarCheck, FaUserCheck, FaStethoscope, FaTimesCircle } from "react-icons/fa";
+import StatCard from "../../components/Dashboard/StatCard";
+
 
 const DoctorAppointments = () => {
   const {
@@ -81,20 +84,69 @@ const DoctorAppointments = () => {
     } finally {
       setLoadingReschedule(false);
     }
-  };
+  }; 
+
+  const appointmentStats = [
+  {
+    icon: <FaCalendarCheck></FaCalendarCheck>,
+    label: "Upcoming Appointments",
+    value: 12,
+    subtitle: "Today & Tomorrow",
+    change: 8,
+  },
+  {
+    icon: <FaUserCheck></FaUserCheck>,
+    label: "Checked In",
+    value: 5,
+    subtitle: "Waiting patients",
+    change: -3,
+  },
+  {
+    icon: <FaStethoscope></FaStethoscope>,
+    label: "In Consultation",
+    value: 2,
+    subtitle: "Ongoing",
+    change: 0,
+  },
+  {
+    icon: <FaTimesCircle></FaTimesCircle>,
+    label: "Cancelled",
+    value: 1,
+    subtitle: "Last 24 hrs",
+    change: -20,
+  },
+];
+
 
   return (
     <>
-      
-      
-      <div className="w-full max-w-6xl m-5">
-        <p className="mb-3 text-lg font-medium">All Appointments</p>
+      <div className="w-full max-w-6xl m-5"> 
+
+        <div className="flex gap-4 overflow-x-auto px-5 mt-4">
+  {appointmentStats.map((stat, index) => (
+    <StatCard
+      key={index}
+      icon={stat.icon}
+      label={stat.label}
+      value={stat.value}
+      subtitle={stat.subtitle}
+      change={stat.change}
+    />
+  ))}
+</div>
+
+        <p className="mb-3 text-lg font-medium">All Appointments</p> 
+
+        
+
 
         <div className="bg-white shadow-2xl rounded-2xl text-sm max-h-[80vh] min-h-[50vh] overflow-y-auto">
           {/* Table Header */}
-          <div className="max-sm:hidden grid grid-cols-[0.9fr_1.6fr_1fr_0.6fr_1.4fr_1.4fr_1fr_1fr_1.2fr] gap-1 py-3 px-6 border-b bg-primary font-medium text-white">
+          <div className="max-sm:hidden sticky top-0 z-10 grid grid-cols-[0.9fr_1.5fr_0.6fr_1fr_0.6fr_1.4fr_1.4fr_1fr_1fr_1.2fr] gap-2 py-3 px-6 border-b bg-primary font-medium text-white ">
             <p>Appointment Token</p>
+
             <p>Patient</p>
+            <p>Appointment Priority</p>
             <p>Payment Mode</p>
             <p>Age</p>
             <p>Date & Time</p>
@@ -111,7 +163,7 @@ const DoctorAppointments = () => {
             .map((item, index) => (
               <div
                 key={item.appointmentToken}
-                className="sm:grid grid-cols-[0.9fr_1.6fr_1fr_0.6fr_1.4fr_1.4fr_1fr_1fr_1.2fr] gap-1 items-center text-gray-600 py-3 px-6 border-b hover:bg-gray-50 max-sm:flex max-sm:flex-col max-sm:gap-4"
+                className="sm:grid grid-cols-[0.9fr_1.5fr_0.6fr_1fr_0.6fr_1.4fr_1.4fr_1fr_1fr_1.2fr] gap-3 items-center text-gray-600 py-3 px-8 border-b hover:bg-gray-50 max-sm:flex max-sm:flex-col max-sm:gap-4"
               >
                 {/* Index */}
                 <p className="max-sm:hidden">{item.appointmentToken}</p>
@@ -126,17 +178,33 @@ const DoctorAppointments = () => {
                   <p className="truncate">{item.patientDetails?.patientName}</p>
                 </div>
 
+                <span
+                  className={`inline-block px-3 py-1 text-xs font-medium rounded-full capitalize
+    ${
+      item.appointmentPriority === "normal"
+        ? "bg-indigo-100 text-indigo-400"
+        : item.appointmentPriority === "high"
+        ? "bg-blue-100 text-blue-700"
+        : item.appointmentPriority === "urgent"
+        ? "bg-orange-100 text-orange-700"
+        : item.appointmentPriority === "emergency"
+        ? "bg-red-100 text-red-700"
+        : "bg-gray-100 text-gray-700"
+    }
+  `}
+                >
+                  {item.appointmentPriority}
+                </span>
+
                 {/* Payment */}
-                <div>
+                <div className="flex items-center px-3">
                   <p className="text-xs inline border border-primary px-2 rounded-full">
                     {item.payment ? "Online" : "CASH"}
                   </p>
                 </div>
 
                 {/* Age */}
-                <p className="max-sm:hidden">
-                  {item.patientDetails?.age}
-                </p>
+                <p className="max-sm:hidden px-3">{item.patientDetails?.age}</p>
 
                 {/* Date & Time */}
                 <p>
@@ -256,9 +324,9 @@ const DoctorAppointments = () => {
 
                 {/* Action */}
                 {item.cancelled ? (
-                  <p className="text-red-400 text-xs font-medium">Cancelled</p>
+                  <p className="inline-block text-center px-3 py-1 text-xs font-medium text-red-700 bg-red-100 rounded-full">Cancelled</p>
                 ) : item.isCompleted ? (
-                  <p className="text-green-500 text-xs font-medium">
+                  <p className="inline-block text-center px-3 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full">
                     Completed
                   </p>
                 ) : (
@@ -294,7 +362,6 @@ const DoctorAppointments = () => {
           onClose={() => setCallingPatient(null)}
         />
       )}
-      
     </>
   );
 };

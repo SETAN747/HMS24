@@ -13,6 +13,81 @@ const formatToDDMMYYYY = (dateString) => {
   return `${day}_${month}_${year}`; // "06_09_2025"
 };
 
+const getDoctorAppointmentStats = (appointments) => {
+  const now = new Date();
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 2); // today + tomorrow
+
+  const last24Hours = new Date(now);
+  last24Hours.setHours(now.getHours() - 24);
+
+  let upcoming = 0; // no_show
+  let checkedIn = 0;
+  let inConsultation = 0;
+  let cancelledLast24Hrs = 0;
+
+  appointments.forEach((item) => {
+    // 📅 normalize appointment date
+    let appointmentDate;
+    if (item.slotDate && item.slotDate.includes("_")) {
+      const [d, m, y] = item.slotDate.split("_").map(Number);
+      appointmentDate = new Date(y, m - 1, d);
+    } else {
+      appointmentDate = new Date(item.slotDateISO || item.slotDate);
+    }
+    appointmentDate.setHours(0, 0, 0, 0);
+
+    // 🟦 UPCOMING = no_show (Today & Tomorrow)
+    if (
+      item.appointmentStatus === "no_show" &&
+      appointmentDate >= today &&
+      appointmentDate < tomorrow
+    ) {
+      upcoming++;
+    }
+
+    // 🟨 CHECKED IN
+    if (item.appointmentStatus === "checked_in") {
+      checkedIn++;
+    }
+
+    // 🟩 IN CONSULTATION
+    if (item.appointmentStatus === "in_consultation") {
+      inConsultation++;
+    }
+
+    // 🟥 CANCELLED (last 24 hrs)
+    if (
+       (item.appointmentStatus === "cancelled_by_user" ||
+   item.appointmentStatus === "cancelled_by_doctor") &&
+      new Date(item.updatedAt || item.createdAt) >= last24Hours
+    ) {
+      cancelledLast24Hrs++;
+    } 
+
+     console.log(
+  "appointmentStatus :",item.appointmentStatus,
+  "updatedAt :",
+  item.updatedAt,
+  new Date(item.updatedAt || item.createdAt) >= last24Hours
+);
+  }); 
+
+ 
+
+  return {
+    upcoming,
+    checkedIn,
+    inConsultation,
+    cancelledLast24Hrs,
+  };
+};
+
+
 const appointmentReschedule = async (req, res) => {
   try {
     const { appointmentId, newSlotDate, newSlotTime } = req.body;
@@ -122,7 +197,8 @@ const changeAvailability = async (req, res) => {
     const { docId } = req.body;
     const docData = await doctorModel.findById(docId);
     await doctorModel.findByIdAndUpdate(docId, {
-      available: !docData.available, availability,     
+      available: !docData.available,
+      availability,
     });
     res.json({ success: true, message: "Availability changed" });
   } catch (error) {
@@ -254,10 +330,10 @@ const verifyAppointmentByCode = async (req, res) => {
 
     appt.isVerified = true;
     appt.verifiedAt = new Date();
-    appt.appointmentStatus = "checked_in"
+    appt.appointmentStatus = "checked_in";
     appt.verifiedBy = doctorId;
     appt.verificationCode = undefined; // remove code after use (optional)
-   
+
     await appt.save();
 
     return res.json({
@@ -296,7 +372,8 @@ const appointmentComplete = async (req, res) => {
 
     if (appointmentData && appointmentData.docId === docId) {
       await appointmentModel.findByIdAndUpdate(appointmentId, {
-        isCompleted: true, appointmentStatus : "completed" ,
+        isCompleted: true,
+        appointmentStatus: "completed",
       });
 
       return res.json({ success: true, message: "Appointment Completed" });
@@ -319,7 +396,8 @@ const appointmentCancel = async (req, res) => {
 
     if (appointmentData && appointmentData.docId === docId) {
       await appointmentModel.findByIdAndUpdate(appointmentId, {
-        cancelled: true, appointmentStatus : "cancelled_by_doctor",
+        cancelled: true,
+        appointmentStatus: "cancelled_by_doctor",
       });
       return res.json({ success: true, message: "Appointment Cancelled" });
     } else {
@@ -417,6 +495,8 @@ const doctorDashboard = async (req, res) => {
       .find({ docId })
       .sort({ createdAt: -1 });
 
+    const appointmentStats = getDoctorAppointmentStats(appointments);
+
     const dashData = {
       total: {
         earnings: totalEarnings,
@@ -433,6 +513,7 @@ const doctorDashboard = async (req, res) => {
         labels: weekDays,
         values: weeklyCounts,
       },
+      appointmentStats,
       latestAppointments: appointments.reverse().slice(0, 5),
       notifications,
     };
@@ -462,14 +543,19 @@ const doctorProfile = async (req, res) => {
 // API to update doctor profile data from Doctor panel
 const updateDoctorProfile = async (req, res) => {
   try {
-    const { fees, address, available,availability, } = req.body;
+    const { fees, address, available, availability } = req.body;
     const docId = req.docId;
-    console.log(docId, fees, address, available,availability, );
+    console.log(docId, fees, address, available, availability);
 
     if (!docId)
       return res.json({ success: false, message: "Doctor ID missing" });
 
-    await doctorModel.findByIdAndUpdate(docId, { fees, address, available,availability, });
+    await doctorModel.findByIdAndUpdate(docId, {
+      fees,
+      address,
+      available,
+      availability,
+    });
 
     res.json({ success: true, message: "Profile Updated" });
   } catch (error) {

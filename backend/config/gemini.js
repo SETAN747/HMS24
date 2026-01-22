@@ -1,10 +1,17 @@
 // backend/config/gemini.js
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-// API key .env file me rakho
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+console.log("Gemini key:", process.env.GEMINI_API_KEY);
 
-export default genAI;
+if (!process.env.GEMINI_API_KEY) {
+  throw new Error("GEMINI_API_KEY missing in .env");
+}
+
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY,
+});
+
+export default ai;
