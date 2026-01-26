@@ -4,6 +4,9 @@ const appointmentSchema = new mongoose.Schema(
   {
     appointmentToken: { type: String, required: true, unique: true },
     tokenSeq: { type: Number }, // sequence number for that doc+slotDate
+    qrCode: {
+      type: String, // base64
+    },
     appointmentStatus: {
       type: String,
       enum: [
@@ -60,7 +63,7 @@ const appointmentSchema = new mongoose.Schema(
   },
   {
     timestamps: true, // 👈 YAHI PAR // Second argument in schema
-  }
+  },
 );
 
 const appointmentModel =

@@ -9,6 +9,7 @@ import { FaCalendarCheck, FaUserCheck, FaStethoscope, FaTimesCircle } from "reac
 import StatCard from "../../components/Dashboard/StatCard";
 
 
+
 const DoctorAppointments = () => {
   const {
     dToken,
@@ -24,12 +25,14 @@ const DoctorAppointments = () => {
 
   const [verifyingId, setVerifyingId] = useState(null);
   const [codeInput, setCodeInput] = useState("");
-  const [loadingVerify, setLoadingVerify] = useState(false);
+  const [loadingVerify, setLoadingVerify] = useState(false); 
+  
+
 
   const [rescheduleId, setRescheduleId] = useState(null);
   const [newDate, setNewDate] = useState("");
   const [newTime, setNewTime] = useState("");
-  const [loadingReschedule, setLoadingReschedule] = useState(false);
+  const [loadingReschedule, setLoadingReschedule] = useState(false); 
 
   const [callingPatient, setCallingPatient] = useState(null);
 

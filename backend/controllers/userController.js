@@ -14,23 +14,38 @@ import SignupOtp from "../models/SignupOtp.js";
 import { sendMail } from "../config/mailer.js";
 import { v4 as uuidv4 } from "uuid";
 import ai from "../config/gemini.js";
+import QRCode from "qrcode";
 
+const generateAppointmentQR = async (appointment) => {
+  const payload = {
+    appointmentId: appointment._id,
+    docId: appointment.docId,
+    token: appointment.appointmentToken,
+    verificationCode : appointment.verificationCode,
+  };
+
+  const qrString = JSON.stringify(payload);
+
+  const qrImage = await QRCode.toDataURL(qrString);
+  return qrImage; // base64 image
+};
 
 // ✅ Helper: Generate JWT Token
 const generateToken = (userId) => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: "7d" });
-}; 
+};
 
-const generateOrUpdateSession = (user, clientIp, userAgent) => { 
-
+const generateOrUpdateSession = (user, clientIp, userAgent) => {
   const formatReadableDate = (date) =>
-  new Intl.DateTimeFormat("en-IN", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(date);
+    new Intl.DateTimeFormat("en-IN", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(date);
 
   const now = formatReadableDate(new Date());
-const expires = formatReadableDate(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)); 
+  const expires = formatReadableDate(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  );
 
   if (!user.activeSession || !user.activeSession.sessionId) {
     // Create new session
@@ -74,18 +89,25 @@ const generateAppointmentToken = (docId, slotDate, seq) => {
   // generateAppointmentToken("68b5adc82df4e258586013ba", "1_11_2025", 5);
   // => "APT-13BA-20251101-005"
 };
-  
- // API For Sending OTP
- const signupRequest = async (req, res) => {
+
+// API For Sending OTP
+const signupRequest = async (req, res) => {
   try {
     const { name, email, password } = req.body;
-    if (!name || !email || !password) return res.json({ success: false, message: "Missing details" });
-    if (!validator.isEmail(email)) return res.json({ success: false, message: "Enter valid email" });
-    if (password.length < 8) return res.json({ success: false, message: "Password must be ≥ 8 chars" });
+    if (!name || !email || !password)
+      return res.json({ success: false, message: "Missing details" });
+    if (!validator.isEmail(email))
+      return res.json({ success: false, message: "Enter valid email" });
+    if (password.length < 8)
+      return res.json({
+        success: false,
+        message: "Password must be ≥ 8 chars",
+      });
 
     // check user exists
     const exist = await userModel.findOne({ email });
-    if (exist) return res.json({ success: false, message: "Email already registered" });
+    if (exist)
+      return res.json({ success: false, message: "Email already registered" });
 
     // hash password now and store in temp record
     const salt = await bycrypt.genSalt(10);
@@ -99,7 +121,7 @@ const generateAppointmentToken = (docId, slotDate, seq) => {
     await SignupOtp.findOneAndUpdate(
       { email },
       { name, passwordHash, otp, expiresAt, attempts: 0 },
-      { upsert: true, new: true }
+      { upsert: true, new: true },
     );
 
     // send email
@@ -108,14 +130,19 @@ const generateAppointmentToken = (docId, slotDate, seq) => {
       <p>Your verification code is: <strong>${otp}</strong></p>
       <p>Code valid for 15 minutes.</p>
     `;
-    await sendMail({ to: email, from: process.env.SMTP_USER, subject: "Verify your email", html });
+    await sendMail({
+      to: email,
+      from: process.env.SMTP_USER,
+      subject: "Verify your email",
+      html,
+    });
 
     return res.json({ success: true, message: "OTP sent to email" });
   } catch (err) {
     console.error(err);
     return res.json({ success: false, message: err.message });
   }
-}; 
+};
 
 // API for Resending Signup OTP
 const resendSignupOtp = async (req, res) => {
@@ -124,10 +151,12 @@ const resendSignupOtp = async (req, res) => {
     if (!email) return res.json({ success: false, message: "Email required" });
 
     const record = await SignupOtp.findOne({ email });
-    if (!record) return res.json({ success: false, message: "No signup request found" });
+    if (!record)
+      return res.json({ success: false, message: "No signup request found" });
 
     // optional: limit resend attempts
-    if (record.resendCount >= 5) return res.json({ success: false, message: "Resend limit reached" });
+    if (record.resendCount >= 5)
+      return res.json({ success: false, message: "Resend limit reached" });
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     record.otp = otp;
@@ -136,7 +165,12 @@ const resendSignupOtp = async (req, res) => {
     record.attempts = 0;
     await record.save();
 
-    await sendMail({ to: email, from: process.env.MAIL_FROM, subject: "Your verification code (resend)", html: `<p>Your code: <strong>${otp}</strong></p>` });
+    await sendMail({
+      to: email,
+      from: process.env.MAIL_FROM,
+      subject: "Your verification code (resend)",
+      html: `<p>Your code: <strong>${otp}</strong></p>`,
+    });
 
     return res.json({ success: true, message: "OTP resent" });
   } catch (err) {
@@ -148,10 +182,10 @@ const resendSignupOtp = async (req, res) => {
 // API to register user
 const registerUser = async (req, res) => {
   try {
-    const { name, email, password } = req.tempSignup; 
-    console.log("name at registerUser:",name)
-    console.log("email at registerUser:",email)
-    console.log("password at registerUser:",password)
+    const { name, email, password } = req.tempSignup;
+    console.log("name at registerUser:", name);
+    console.log("email at registerUser:", email);
+    console.log("password at registerUser:", password);
 
     if (!name || !email || !password) {
       return res.json({ success: false, message: "Missing Details" });
@@ -189,18 +223,21 @@ const registerUser = async (req, res) => {
 
     const token = generateToken(user._id);
 
-    // res.json({ success: true, token }); 
+    // res.json({ success: true, token });
     res.cookie("token", token, {
-  httpOnly: true,
-  secure: true,        // https only (production)
-  sameSite: "none",    // cross-site requests allowed
-  maxAge: 7 * 24 * 60 * 60 * 1000
-}); 
-   
-res.json({ success: true,  token: {
-    name: user.name,
-    email: user.email,
-  } }); 
+      httpOnly: true,
+      secure: true, // https only (production)
+      sameSite: "none", // cross-site requests allowed
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    res.json({
+      success: true,
+      token: {
+        name: user.name,
+        email: user.email,
+      },
+    });
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });
@@ -212,22 +249,25 @@ const googleAuthCallback = async (req, res) => {
     const user = req.user; // Passport verify se aya hua user
     if (!user) {
       return res.redirect(
-        `${process.env.FRONTEND_URL}/login?error=user_not_found`
+        `${process.env.FRONTEND_URL}/login?error=user_not_found`,
       );
     }
 
     // JWT create
-    const token = generateToken(user._id); 
+    const token = generateToken(user._id);
 
     // Get IP + device
-    const clientIp = req.headers["x-forwarded-for"]?.split(",")[0] || req.socket.remoteAddress || req.ip;
+    const clientIp =
+      req.headers["x-forwarded-for"]?.split(",")[0] ||
+      req.socket.remoteAddress ||
+      req.ip;
     const userAgent = req.headers["user-agent"];
 
     // ⭐ Add or update active session here
     generateOrUpdateSession(user, clientIp, userAgent);
     await user.save();
 
-     res.cookie("token", token, {
+    res.cookie("token", token, {
       httpOnly: true,
       secure: true,
       sameSite: "none",
@@ -271,27 +311,32 @@ const loginUser = async (req, res) => {
     const isMatch = await bycrypt.compare(password, user.password);
 
     if (isMatch) {
-      const token = generateToken(user._id); 
+      const token = generateToken(user._id);
 
-       const clientIp = req.headers["x-forwarded-for"]?.split(",")[0] || req.socket.remoteAddress || req.ip;
-    const userAgent = req.headers["user-agent"]; 
+      const clientIp =
+        req.headers["x-forwarded-for"]?.split(",")[0] ||
+        req.socket.remoteAddress ||
+        req.ip;
+      const userAgent = req.headers["user-agent"];
 
-      generateOrUpdateSession(user, clientIp, userAgent); 
+      generateOrUpdateSession(user, clientIp, userAgent);
 
       await user.save();
 
-      
       res.cookie("token", token, {
-  httpOnly: true,
-  secure: true,        // https only (production)
-  sameSite: "none",    // cross-site requests allowed
-  maxAge: 7 * 24 * 60 * 60 * 1000
-});       
+        httpOnly: true,
+        secure: true, // https only (production)
+        sameSite: "none", // cross-site requests allowed
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
 
- res.json({ success: true,  token: {
-    name: user.name,
-    email: user.email,
-  } }); 
+      res.json({
+        success: true,
+        token: {
+          name: user.name,
+          email: user.email,
+        },
+      });
     } else {
       res.json({ success: false, message: "Invalid credentials" });
     }
@@ -299,12 +344,11 @@ const loginUser = async (req, res) => {
     console.log(error);
     res.json({ success: false, message: error.message });
   }
-}; 
+};
 
- const logoutUser = async (req, res) => { 
-  
-  console.log(req.user)
-  const userId = req.user.userId; 
+const logoutUser = async (req, res) => {
+  console.log(req.user);
+  const userId = req.user.userId;
   if (userId) {
     await userModel.findByIdAndUpdate(userId, {
       activeSession: {
@@ -312,8 +356,8 @@ const loginUser = async (req, res) => {
         ipAddress: null,
         createdAt: null,
         expiresAt: null,
-        userAgent: null
-      }
+        userAgent: null,
+      },
     });
   }
 
@@ -325,7 +369,6 @@ const loginUser = async (req, res) => {
 
   return res.json({ success: true, message: "Logged out successfully" });
 };
-
 
 // API to get user profile data
 const getProfile = async (req, res) => {
@@ -381,7 +424,7 @@ const updateProfile = async (req, res) => {
 // API to book appointment
 const bookAppointment = async (req, res) => {
   try {
-    const { docId, slotDate, slotTime ,patientDetails } = req.body;
+    const { docId, slotDate, slotTime, patientDetails } = req.body;
     const userId = req.user.userId; // token se mila hua
 
     const docData = await doctorModel.findById(docId).select("-password");
@@ -415,7 +458,7 @@ const bookAppointment = async (req, res) => {
     const counterDoc = await Counter.findOneAndUpdate(
       { _id: counterKey },
       { $inc: { seq: 1 } },
-      { new: true, upsert: true }
+      { new: true, upsert: true },
     );
     const seq = counterDoc.seq;
 
@@ -437,6 +480,13 @@ const bookAppointment = async (req, res) => {
     };
 
     const newAppointment = new appointmentModel(appointmentData);
+    await newAppointment.save();
+
+    // generate QR
+    const qrCode = await generateAppointmentQR(newAppointment);
+
+    // save QR
+    newAppointment.qrCode = qrCode;
     await newAppointment.save();
 
     // save new slots data in docData
@@ -463,7 +513,11 @@ const bookAppointment = async (req, res) => {
     io.to(appointmentData.userId).emit("new-notification", notification);
     io.to(appointmentData.docId).emit("new-notification", notification);
 
-    res.json({ success: true, message: "Appointment Booked" , appointmentId: newAppointment._id, });
+    res.json({
+      success: true,
+      message: "Appointment Booked",
+      appointmentId: newAppointment._id,
+    });
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });
@@ -497,7 +551,8 @@ const cancelAppointment = async (req, res) => {
     }
 
     await appointmentModel.findByIdAndUpdate(appointmentId, {
-      cancelled: true, appointmentStatus : "cancelled_by_user",
+      cancelled: true,
+      appointmentStatus: "cancelled_by_user",
     });
 
     // releasing doctor slot
@@ -509,7 +564,7 @@ const cancelAppointment = async (req, res) => {
     let slots_booked = doctorData.slots_booked;
 
     slots_booked[slotDate] = slots_booked[slotDate].filter(
-      (e) => e !== slotTime
+      (e) => e !== slotTime,
     );
 
     await doctorModel.findByIdAndUpdate(docId, { slots_booked });
@@ -555,11 +610,10 @@ const paymentRazorpay = async (req, res) => {
       currency: process.env.CURRENCY,
       receipt: appointmentId,
     };
-    
-     console.log("options: ",options)
+
+    console.log("options: ", options);
     //creating of an order
     const order = await razorpayInstance.orders.create(options);
-   
 
     res.json({ success: true, order });
   } catch (error) {
@@ -581,7 +635,7 @@ const verifyRazorpay = async (req, res) => {
 
       // Inside verifyRazorpay after confirming payment success
       const appointmentData = await appointmentModel.findById(
-        orderInfo.receipt
+        orderInfo.receipt,
       );
 
       // const userData = await userModel.findById(appointmentData.userId);
@@ -639,11 +693,11 @@ User text: """${symptoms}"""
         },
       ],
     });
-     
+
     const classifyToken =
-  classifyResult.candidates?.[0]?.content?.parts?.[0]?.text
-    ?.trim()
-    .toUpperCase() || "SYMPTOM";
+      classifyResult.candidates?.[0]?.content?.parts?.[0]?.text
+        ?.trim()
+        .toUpperCase() || "SYMPTOM";
 
     // If classifier says GREETING -> return a greeting type
     if (classifyToken.includes("GREETING")) {
@@ -661,7 +715,7 @@ If the question is unrelated to human health, reply exactly: "Sorry, I can only 
 
 User question: """${symptoms}"""
 `;
-       const adviceResult = await ai.models.generateContent({
+      const adviceResult = await ai.models.generateContent({
         model: "gemini-2.0-flash",
         contents: [
           {
@@ -697,8 +751,8 @@ If none of the above match, reply exactly: NO_MATCH
 
 Return one of: General physician OR Gynecologist OR Dermatologist OR Pediatricians OR Neurologist OR Gastroenterologist OR NO_MATCH.
 `;
-     
-     const specResult = await ai.models.generateContent({
+
+    const specResult = await ai.models.generateContent({
       model: "gemini-2.0-flash",
       contents: [
         {
@@ -708,7 +762,8 @@ Return one of: General physician OR Gynecologist OR Dermatologist OR Pediatricia
       ],
     });
 
-    const aiResponse = specResult.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ||
+    const aiResponse =
+      specResult.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ||
       "NO_MATCH";
 
     // If model says NO_MATCH -> return advice type with "sorry" message
@@ -853,7 +908,7 @@ const markNotificationAsRead = async (req, res) => {
     // 🔹 Sabhi unread notifications ko read mark karo
     const result = await notificationModel.updateMany(
       { userId, isRead: false },
-      { $set: { isRead: true } }
+      { $set: { isRead: true } },
     );
 
     res.json({
@@ -887,5 +942,4 @@ export {
   addReview,
   getUserNotifications,
   markNotificationAsRead,
-  
 };

@@ -178,8 +178,12 @@ const MyAppointments = () => {
               src={item.docData.image}
               alt=""
               className="w-full h-40 object-cover rounded-xl bg-indigo-50"
-            />
-          </div>
+            /> 
+
+            
+          </div> 
+
+          
 
           {/* Doctor Info */}
           <div className="flex-1 text-sm text-gray-600">
@@ -200,7 +204,15 @@ const MyAppointments = () => {
                   Appointment:
                 </span>{" "}
                 {slotDateFormat(item.slotDate)} | {item.slotTime}
-              </p>
+              </p> 
+
+              <div className="w-full lg:w-40 flex-shrink-0">
+            <img
+              src={item.qrCode}
+              alt="qrCode"
+              className="w-full h-40 object-cover rounded-xl bg-indigo-50"
+            />
+          </div>
 
               <p className="text-xs">
                 <span className="font-medium text-gray-700">
