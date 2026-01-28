@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 import DoctorCall from "../../components/Doctor/DoctorCall"; 
 import { FaCalendarCheck, FaUserCheck, FaStethoscope, FaTimesCircle } from "react-icons/fa";
 import StatCard from "../../components/Dashboard/StatCard";
+import QRScanner from "../../components/QRScanner/QRScanner";
 
 
 
@@ -27,6 +28,10 @@ const DoctorAppointments = () => {
   const [codeInput, setCodeInput] = useState("");
   const [loadingVerify, setLoadingVerify] = useState(false); 
   
+
+  const [showScanner, setShowScanner] = useState(false);
+const [scanLoading, setScanLoading] = useState(false);
+
 
 
   const [rescheduleId, setRescheduleId] = useState(null);
@@ -118,7 +123,37 @@ const DoctorAppointments = () => {
     subtitle: "Last 24 hrs",
     change: -20,
   },
-];
+];  
+
+  const handleQRScanSuccess = async (qrData) => {
+  try {
+    setScanLoading(true);
+
+    const parsed = JSON.parse(qrData); 
+    console.log("qr data : " , parsed)
+    const { appointmentId, token , verificationCode } = parsed;
+    
+     
+    const { data } = await axios.post(
+      backendUrl + "/api/doctor/verify-appointment",
+      { appointmentId, token , code: verificationCode },
+      { headers: { dToken } }
+    );
+
+    if (data.success) {
+      toast.success("Appointment checked-in ✅");
+      setShowScanner(false);
+      await getAppointments();
+    } else {
+      toast.error(data.message || "QR verification failed");
+    }
+  } catch (err) {
+    toast.error("Invalid or corrupted QR");
+  } finally {
+    setScanLoading(false);
+  }
+};
+
 
 
   return (
@@ -248,7 +283,7 @@ const DoctorAppointments = () => {
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <button
+                      {/* <button
                         onClick={() => {
                           setVerifyingId(item._id);
                           setCodeInput("");
@@ -256,7 +291,27 @@ const DoctorAppointments = () => {
                         className="px-3 py-1 text-sm border rounded hover:bg-indigo-50"
                       >
                         Verify
-                      </button>
+                      </button> */} 
+
+                      <div className="flex gap-2">
+  <button
+    onClick={() => {
+      setVerifyingId(item._id);
+      setCodeInput("");
+    }}
+    className="px-3 py-1 text-sm border rounded hover:bg-indigo-50"
+  >
+    Code
+  </button>
+
+  <button
+    onClick={() => setShowScanner(true)}
+    className="px-3 py-1 text-sm bg-primary text-white rounded"
+  >
+    Scan QR
+  </button>
+</div>
+
                     </div>
                   )}
 
@@ -362,9 +417,65 @@ const DoctorAppointments = () => {
         <DoctorCall
           patient={callingPatient.userData}
           doctor={callingPatient.docData}
-          onClose={() => setCallingPatient(null)}
+          onClose={() => setCallingPatient(null)} 
         />
+      )} 
+       {showScanner && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md bg-white/30">
+    <div className="relative w-[92%] max-w-md rounded-3xl border border-white/40 bg-white/70 shadow-2xl backdrop-blur-xl p-6 animate-fadeIn">
+
+      {/* Close button (top right) */}
+      <button
+        onClick={() => setShowScanner(false)}
+        className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 transition"
+      >
+        ✕
+      </button>
+
+      {/* Header */}
+      <div className="text-center mb-4">
+        <h2 className="text-xl font-semibold text-gray-800">
+          Scan Appointment QR
+        </h2>
+        <p className="text-sm text-gray-500 mt-1">
+          Align QR inside the frame
+        </p>
+      </div>
+
+      {/* Scanner Frame */}
+      <div className="relative rounded-2xl overflow-hidden border border-gray-200 shadow-inner">
+        <QRScanner onScanSuccess={handleQRScanSuccess} />
+
+        {/* Scan overlay */}
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <div className="w-48 h-48 rounded-xl border-2 border-primary/70 animate-pulse" />
+        </div>
+      </div>
+
+      {/* Status */}
+      {scanLoading && (
+        <div className="mt-4 text-center">
+          <span className="inline-flex items-center gap-2 text-sm text-primary font-medium">
+            <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            Verifying appointment...
+          </span>
+        </div>
       )}
+
+      {/* Footer */}
+      <div className="mt-5">
+        <button
+          onClick={() => setShowScanner(false)}
+          className="w-full rounded-xl border border-gray-300 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 transition"
+        >
+          Cancel Scan
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+
     </>
   );
 };
